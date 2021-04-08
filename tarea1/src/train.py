@@ -26,8 +26,8 @@ def train_for_classification(net, dataset, optimizer,
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
-    train_loader = DataLoader(train, batch_size=8, shuffle=True, num_workers=2, pin_memory=True)
-    val_loader = DataLoader(val, batch_size=8, shuffle=False, num_workers=2, pin_memory=True, drop_last=True)
+    train_loader = DataLoader(train, batch_size=32, shuffle=True, num_workers=2, pin_memory=True)
+    val_loader = DataLoader(val, batch_size=32, shuffle=False, num_workers=2, pin_memory=True, drop_last=True)
 
     tiempo_epochs = 0
     train_loss, train_acc, test_acc = [], [], []
@@ -100,7 +100,7 @@ def eval_net(device, net, test_loader):
     for i, data in enumerate(test_loader):
         images, labels = data
         images, labels = images.to(device), labels.to(device)
-        out_dict = net(images)
+        out_dict = net(images.float())
         logits = out_dict['logits']
         _, max_idx = torch.max(logits, dim=1)
         running_acc += torch.sum(max_idx == labels).item()
