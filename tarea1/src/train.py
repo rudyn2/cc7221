@@ -1,37 +1,113 @@
 from dataset import ImageDataset
 from torch.utils.data import DataLoader
-import pytorch_lightning as pl
-import torch.nn as nn
-import torch
+
 from resnet import Resnet
 import wandb
 
+import argparse
+import logging
+import os
+import sys
+import torch.nn.functional as F
 
-class ImageClassifier(pl.LightningModule):
+import torch
+import time
+import torch.nn as nn
+from torch import optim
+from torch.utils.data import DataLoader, random_split
+from tqdm import tqdm
+from collections import defaultdict
 
-    def __init__(self, backbone: nn.Module):
-        super().__init__()
-        self.backbone = backbone
-        self.loss = nn.CrossEntropyLoss()
 
-    def forward(self, x):
-        # in lightning, forward defines the prediction/inference actions
-        y_predicted = self.backbone(x)
-        return y_predicted
+def train_for_classification(net, dataset, optimizer,
+                             criterion, lr_scheduler=None,
+                             epochs=1, reports_every=1, device='cuda', val_percent: float = 0.1):
+    net.to(device)
+    n_val = int(len(dataset) * val_percent)
+    n_train = len(dataset) - n_val
+    train, val = random_split(dataset, [n_train, n_val])
+    train_loader = DataLoader(train, batch_size=8, shuffle=True, num_workers=2, pin_memory=True)
+    val_loader = DataLoader(val, batch_size=8, shuffle=False, num_workers=2, pin_memory=True, drop_last=True)
 
-    def training_step(self, batch, batch_idx):
-        # training_step defined the train loop.
-        # It is independent of forward
-        x, y = batch
-        y_pred = self.backbone(x)['logits'].type(torch.DoubleTensor)        # probability distribution over classes
-        y = y.type(torch.LongTensor)                                        # encoded class label as integer
-        loss = self.loss(y_pred, y)
-        wandb.log({'loss': loss})
-        return loss
+    tiempo_epochs = 0
+    train_loss, train_acc, test_acc = [], [], []
 
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
+    for e in range(1, epochs + 1):
+        inicio_epoch = time.time()
+        net.train()
+
+        # Variables para las métricas
+        running_loss, running_acc = 0.0, 0.0
+        avg_acc, avg_loss = 0, 0
+
+        for i, data in enumerate(train_loader):
+            images, labels = data
+            images, labels = images.to(device), labels.to(device)
+
+            # optimization step
+            optimizer.zero_grad()
+            out_dict = net(images.float())
+            y_pred = out_dict['logits'].type(torch.DoubleTensor)  # probability distribution over classes
+            labels = labels.type(torch.LongTensor)
+            loss = criterion(y_pred, labels)
+            loss.backward()
+            optimizer.step()
+
+            # loss
+            items = min(n_train, (i + 1) * train_loader.batch_size)
+            running_loss += loss.item()
+            avg_loss = running_loss / (i + 1)
+
+            # accuracy
+            _, max_idx = torch.max(y_pred, dim=1)
+            running_acc += torch.sum(max_idx == labels).item()
+            avg_acc = running_acc / items * 100
+
+            # report
+            sys.stdout.write(f'\rEpoch:{e}({items}/{n_train}), '
+                             + (f'lr:{lr_scheduler.get_last_lr()[0]:02.7f}, ' if lr_scheduler is not None else '')
+                             + f'Loss:{avg_loss:02.5f}, '
+                             + f'Train Acc:{avg_acc:02.1f}%')
+            wandb.log({'train/loss': avg_loss, 'train/acc': train_acc})
+
+        tiempo_epochs += time.time() - inicio_epoch
+
+        if e % reports_every == 0:
+            sys.stdout.write(', Validating...')
+
+            train_loss.append(avg_loss)
+            train_acc.append(avg_acc)
+
+            avg_acc = eval_net(device, net, val_loader)
+            test_acc.append(avg_acc)
+            sys.stdout.write(f', Val Acc:{avg_acc:02.2f}%, '
+                             + f'Avg-Time:{tiempo_epochs / e:.3f}s.\n')
+            wandb.log({'val/loss': avg_loss, 'val/acc': train_acc})
+        else:
+            sys.stdout.write('\n')
+
+        if lr_scheduler is not None:
+            lr_scheduler.step()
+
+    return train_loss, (train_acc, test_acc)
+
+
+def eval_net(device, net, test_loader):
+    net.eval()
+    running_acc = 0.0
+    total_test = 0
+
+    for i, data in enumerate(test_loader):
+        images, labels = data
+        images, labels = images.to(device), labels.to(device)
+        out_dict = net(images)
+        logits = out_dict['logits']
+        _, max_idx = torch.max(logits, dim=1)
+        running_acc += torch.sum(max_idx == labels).item()
+        total_test += len(labels)
+
+    avg_acc = (running_acc / total_test) * 100
+    return avg_acc
 
 
 if __name__ == '__main__':
@@ -41,15 +117,11 @@ if __name__ == '__main__':
 
     torch.cuda.empty_cache()
     train_dataset = ImageDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
-    train_dataloader = DataLoader(train_dataset, batch_size=8, pin_memory=True, shuffle=True)
     backbone_resnet = Resnet(19)
-    classifier = ImageClassifier(backbone_resnet)
-    classifier.to(torch.double)
-    trainer = pl.Trainer(gpus=0, precision=32, limit_train_batches=0.5)
-    trainer.fit(classifier, train_dataloader)
+    optimizer = torch.optim.Adam(backbone_resnet.parameters(), 0.0001)
+    criterion = nn.CrossEntropyLoss()
 
-    # single_example, _ = train_dataset[0]
-    #
-    # for images, labels in train_dataloader:
-    #     y = backbone_resnet(images.float())
-    #     break
+    train_for_classification(backbone_resnet,
+                             train_dataset,
+                             optimizer,
+                             criterion)

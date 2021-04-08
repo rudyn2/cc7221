@@ -50,7 +50,6 @@ class Resnet(nn.Module):
 
 
 class BasicBlock(nn.Module):
-    expansion = 1
 
     def __init__(self, in_channels: int, down_sample_space: bool = False, up_sample_channels: bool = False):
         super(BasicBlock, self).__init__()
@@ -58,16 +57,19 @@ class BasicBlock(nn.Module):
         out_channels = in_channels * 2 if up_sample_channels else in_channels
 
         if down_sample_space:
-            self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3), stride=(2, 2),
+            self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3),
+                                   stride=(2, 2),
                                    padding=(1, 1))
             #  double the number of channels just at the beginning, now fix it
             in_channels = out_channels // 2 if up_sample_channels else in_channels
-            self.skip_conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3), stride=(2, 2),
+            self.skip_conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3),
+                                       stride=(2, 2),
                                        padding=(1, 1))
             self.skip_norm = nn.BatchNorm2d(out_channels)
         else:
             in_channels = out_channels / 2 if up_sample_channels else in_channels
-            self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3), stride=(1, 1),
+            self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3),
+                                   stride=(1, 1),
                                    padding=(1, 1))
 
         self.bn1 = nn.BatchNorm2d(out_channels)
