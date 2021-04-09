@@ -93,4 +93,4 @@ class ImageOfflineDataset(ImageDataset):
 
 
 if __name__ == '__main__':
-    ImageOfflineDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
+    ImageOfflineDataset(r"C:\Users\aleja\Desktop\Tareas\Reconocimiento Visual con Deep Learning\Tarea1\Imagenes\clothing-small", 224, 224)

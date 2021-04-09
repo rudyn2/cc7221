@@ -1,22 +1,14 @@
-from dataset import ImageDataset
-from torch.utils.data import DataLoader
-
-from resnet import Resnet
-import wandb
-
-import argparse
-import logging
-import os
 import sys
-import torch.nn.functional as F
+import time
 
 import torch
-import time
 import torch.nn as nn
-from torch import optim
+import wandb
 from torch.utils.data import DataLoader, random_split
-from tqdm import tqdm
-from collections import defaultdict
+
+from dataset import ImageDataset
+from resnet import Resnet
+from Resnetj import ResNet, ResNet50
 
 
 def train_for_classification(net, dataset, optimizer,
@@ -26,8 +18,8 @@ def train_for_classification(net, dataset, optimizer,
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
-    train_loader = DataLoader(train, batch_size=32, shuffle=True, num_workers=2, pin_memory=True)
-    val_loader = DataLoader(val, batch_size=32, shuffle=False, num_workers=2, pin_memory=True, drop_last=True)
+    train_loader = DataLoader(train, batch_size=8, shuffle=True, num_workers=1, pin_memory=True)
+    val_loader = DataLoader(val, batch_size=8, shuffle=False, num_workers=1, pin_memory=True, drop_last=True)
 
     tiempo_epochs = 0
     train_loss, train_acc, test_acc = [], [], []
@@ -116,8 +108,9 @@ if __name__ == '__main__':
     config.learning_rate = 0.01
 
     torch.cuda.empty_cache()
-    train_dataset = ImageDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
-    backbone_resnet = Resnet(19)
+    train_dataset = ImageDataset(r"C:\Users\aleja\Desktop\Tareas\Reconocimiento Visual con Deep Learning\Tarea1\Imagenes\clothing-small", 224, 224)
+    #backbone_resnet = Resnet(19)
+    backbone_resnet = ResNet50(img_channel=3, num_classes=19)
     optimizer = torch.optim.Adam(backbone_resnet.parameters(), 0.0001)
     criterion = nn.CrossEntropyLoss()
 

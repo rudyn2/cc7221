@@ -1,0 +1,24 @@
+{
+    "os": "Windows-10-10.0.19041-SP0",
+    "python": "3.9.2",
+    "heartbeatAt": "2021-04-09T02:38:42.781808",
+    "startedAt": "2021-04-09T02:38:41.442101",
+    "docker": null,
+    "gpu": "GeForce GTX 1060 3GB",
+    "gpu_count": 1,
+    "cpu_count": 4,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "C:\\Users\\aleja\\Desktop\\Tareas\\Reconocimiento Visual con Deep Learning\\Tarea1\\Git\\cc7221\\tarea1\\src\\train.py",
+    "codePath": "tarea1\\src\\train.py",
+    "git": {
+        "remote": "https://github.com/rudyn2/cc7221.git",
+        "commit": "96094e4411379585f5e740c9370b8ef68a56ff71"
+    },
+    "email": "alejandro.morales@ing.uchile.cl",
+    "root": "C:/Users/aleja/Desktop/Tareas/Reconocimiento Visual con Deep Learning/Tarea1/Git/cc7221",
+    "host": "DESKTOP-N3B86S9",
+    "username": "aleja",
+    "executable": "C:\\Users\\aleja\\miniconda3\\envs\\cc7221\\python.exe"
+}
