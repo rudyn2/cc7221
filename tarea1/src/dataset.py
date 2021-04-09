@@ -71,7 +71,7 @@ class ImageDataset(Dataset):
         arr = cv2.resize(arr, dsize=(self.width, self.height))
         arr = np.swapaxes(arr, 0, -1)
         # arr = self.transform(arr)
-        return arr, self.image_classes[index]
+        return arr, float(self.image_classes[index])
 
 
 class ImageOfflineDataset(ImageDataset):
