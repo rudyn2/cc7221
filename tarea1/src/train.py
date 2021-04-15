@@ -17,8 +17,8 @@ def train_for_classification(net, dataset, optimizer,
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
-    train_loader = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=1, pin_memory=True)
-    val_loader = DataLoader(val, batch_size=batch_size, shuffle=False, num_workers=1, pin_memory=True, drop_last=True)
+    train_loader = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
+    val_loader = DataLoader(val, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True, drop_last=True)
 
     tiempo_epochs = 0
     train_loss, train_acc, test_acc = [], [], []
@@ -37,7 +37,7 @@ def train_for_classification(net, dataset, optimizer,
 
             # optimization step
             optimizer.zero_grad()
-            out_dict = net(images.float())
+            out_dict = net(images)
             y_pred = out_dict['logits'].type(torch.DoubleTensor)  # probability distribution over classes
             labels = labels.type(torch.LongTensor)
             loss = criterion(y_pred, labels)

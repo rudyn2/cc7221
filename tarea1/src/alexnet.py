@@ -32,9 +32,9 @@ class AlexNet(nn.Module):
             nn.Linear(4096, num_classes),
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor):
         x = self.features(x)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.classifier(x)
-        return x
+        return {'logits': x}

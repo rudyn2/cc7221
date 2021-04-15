@@ -70,6 +70,7 @@ class ImageDataset(Dataset):
 
         arr = cv2.resize(arr, dsize=(self.width, self.height))
         arr = np.swapaxes(arr, 0, -1)
+        arr = arr.astype(np.float32)
         # arr = self.transform(arr)
         return arr, float(self.image_classes[index])
 
@@ -93,4 +94,11 @@ class ImageOfflineDataset(ImageDataset):
 
 
 if __name__ == '__main__':
-    ImageOfflineDataset(r"C:\Users\aleja\Desktop\Tareas\Reconocimiento Visual con Deep Learning\Tarea1\Imagenes\clothing-small", 224, 224)
+    from torch.utils.data import DataLoader
+
+    d = ImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
+    loader = DataLoader(d, batch_size=64)
+    for x, y in loader:
+        x = x.cuda()
+        print(x.shape, x.dtype, x.device)
+        break
