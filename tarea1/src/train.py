@@ -2,24 +2,23 @@ import sys
 import time
 
 import torch
-import torch.nn as nn
 import wandb
 from torch.utils.data import DataLoader, random_split
-
-from dataset import ImageDataset
-from resnet import Resnet
-from Resnetj import ResNet, ResNet50
 
 
 def train_for_classification(net, dataset, optimizer,
                              criterion, lr_scheduler=None,
-                             epochs=1, reports_every=1, device='cuda', val_percent: float = 0.1):
+                             epochs: int = 1,
+                             batch_size: int = 64,
+                             reports_every: int = 1,
+                             device: str = 'cuda',
+                             val_percent: float = 0.1):
     net.to(device)
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
-    train_loader = DataLoader(train, batch_size=8, shuffle=True, num_workers=1, pin_memory=True)
-    val_loader = DataLoader(val, batch_size=8, shuffle=False, num_workers=1, pin_memory=True, drop_last=True)
+    train_loader = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=1, pin_memory=True)
+    val_loader = DataLoader(val, batch_size=batch_size, shuffle=False, num_workers=1, pin_memory=True, drop_last=True)
 
     tiempo_epochs = 0
     train_loss, train_acc, test_acc = [], [], []
@@ -100,21 +99,3 @@ def eval_net(device, net, test_loader):
 
     avg_acc = (running_acc / total_test) * 100
     return avg_acc
-
-
-if __name__ == '__main__':
-    wandb.init(project='homework1-cc7221', entity='p137')
-    config = wandb.config
-    config.learning_rate = 0.01
-
-    torch.cuda.empty_cache()
-    train_dataset = ImageDataset(r"C:\Users\aleja\Desktop\Tareas\Reconocimiento Visual con Deep Learning\Tarea1\Imagenes\clothing-small", 224, 224)
-    #backbone_resnet = Resnet(19)
-    backbone_resnet = ResNet50(img_channel=3, num_classes=19)
-    optimizer = torch.optim.Adam(backbone_resnet.parameters(), 0.0001)
-    criterion = nn.CrossEntropyLoss()
-
-    train_for_classification(backbone_resnet,
-                             train_dataset,
-                             optimizer,
-                             criterion)
