@@ -50,3 +50,6 @@ if __name__ == '__main__':
     logging.info("Training...")
     train_for_classification(net=model, dataset=train_dataset, batch_size=args.batch_size,
                              optimizer=optimizer, criterion=criterion, epochs=args.epochs)
+
+    logging.info("Saving...")
+    torch.save(model.state_dict(), f"{args.model}_{args.epochs}.pth")
