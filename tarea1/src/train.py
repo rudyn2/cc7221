@@ -21,6 +21,7 @@ def train_for_classification(net, dataset, optimizer,
     val_loader = DataLoader(val, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True, drop_last=True)
 
     tiempo_epochs = 0
+    global_step = 0
     train_loss, train_acc, test_acc = [], [], []
 
     for e in range(1, epochs + 1):
@@ -59,7 +60,9 @@ def train_for_classification(net, dataset, optimizer,
                              + (f'lr:{lr_scheduler.get_last_lr()[0]:02.7f}, ' if lr_scheduler is not None else '')
                              + f'Loss:{avg_loss:02.5f}, '
                              + f'Train Acc:{avg_acc:02.1f}%')
-            wandb.log({'train/loss': avg_loss, 'train/acc': train_acc})
+            wandb.log({'train/loss': avg_loss, 'train/acc': avg_acc}, step=global_step)
+
+            global_step += 1
 
         tiempo_epochs += time.time() - inicio_epoch
 
@@ -73,7 +76,7 @@ def train_for_classification(net, dataset, optimizer,
             test_acc.append(avg_acc)
             sys.stdout.write(f', Val Acc:{avg_acc:02.2f}%, '
                              + f'Avg-Time:{tiempo_epochs / e:.3f}s.\n')
-            wandb.log({'val/loss': avg_loss, 'val/acc': train_acc})
+            wandb.log({'val/acc': avg_acc}, step=global_step)
         else:
             sys.stdout.write('\n')
 
