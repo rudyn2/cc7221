@@ -83,14 +83,14 @@ class ResNext(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-        hidden = x
+        #hidden = x
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
-        out = x
+        
 
-        return {'hidden': hidden, 'out': out}
+        return x
 
     def _make_layer(self, bottleneck_block, num_residual_blocks, out_channels, stride):
         residual = None
