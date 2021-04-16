@@ -1,6 +1,5 @@
 import os
 import re
-from abc import ABC
 
 import cv2
 import numpy as np
@@ -59,16 +58,32 @@ class ImageDataset(Dataset):
             return len(self.image_paths.keys())
         raise Exception("There is no data!")
 
+    def smart_resize(self, arr):
+        ratio = self.width / min(arr.shape[:2])
+        new_width = arr.shape[0] * ratio
+        new_height = arr.shape[1] * ratio
+        arr_resized = cv2.resize(arr, dsize=(int(new_height), int(new_width)))
+        if arr_resized.shape[1] > arr_resized.shape[0]:
+            diff = arr_resized.shape[1] - self.width
+            half = int(diff / 2)
+            arr_cropped = arr_resized[:, half: half + self.width]
+        else:
+            diff = arr_resized.shape[0] - self.width
+            half = int(diff / 2)
+            arr_cropped = arr_resized[half: half + self.width, :]
+        return arr_cropped
+
     def __getitem__(self, index: int):
 
         assert index < len(self), f"Index must be less or equal to {len(self) - 1}"
 
         arr = cv2.imread(os.path.join(self.path, self.image_keys[index]), cv2.IMREAD_COLOR)
+        arr = self.smart_resize(arr)
+        # arr = cv2.resize(arr, dsize=(self.width, self.height))
         arr = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB) / 255.0
         for c in range(2):
             arr[:, :, c] = (arr[:, :, c] - self.MEAN[c]) / self.STD[c]
 
-        arr = cv2.resize(arr, dsize=(self.width, self.height))
         arr = np.swapaxes(arr, 0, -1)
         arr = arr.astype(np.float32)
 
