@@ -60,7 +60,7 @@ def train_for_classification(net, dataset, optimizer,
                              + (f'lr:{lr_scheduler.get_last_lr()[0]:02.7f}, ' if lr_scheduler is not None else '')
                              + f'Loss:{avg_loss:02.5f}, '
                              + f'Train Acc:{avg_acc:02.1f}%')
-            wandb.log({'train/loss': avg_loss, 'train/acc': avg_acc}, step=global_step)
+            wandb.log({'train/loss': float(avg_loss), 'train/acc': float(avg_acc)}, step=global_step)
 
             global_step += 1
 
@@ -76,7 +76,7 @@ def train_for_classification(net, dataset, optimizer,
             test_acc.append(avg_acc)
             sys.stdout.write(f', Val Acc:{avg_acc:02.2f}%, '
                              + f'Avg-Time:{tiempo_epochs / e:.3f}s.\n')
-            wandb.log({'val/acc': avg_acc}, step=global_step)
+            wandb.log({'val/acc': float(avg_acc)}, step=global_step)
         else:
             sys.stdout.write('\n')
 
