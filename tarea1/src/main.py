@@ -56,6 +56,6 @@ if __name__ == '__main__':
                              optimizer=optimizer, criterion=criterion, epochs=args.epochs)
 
     logging.info("Saving...")
-    model_name = f"{args.model}_{args.epochs}.pth"
+    model_name = f"last_{model.__class__.__name__}_{args.epochs}.pth"
     torch.save(model.state_dict(), model_name)
     wandb.save(model_name)

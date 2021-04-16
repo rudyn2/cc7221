@@ -23,6 +23,7 @@ def train_for_classification(net, dataset, optimizer,
 
     tiempo_epochs = 0
     global_step = 0
+    best_acc = 0
     train_loss, train_acc, test_acc = [], [], []
 
     for e in range(1, epochs + 1):
@@ -62,10 +63,10 @@ def train_for_classification(net, dataset, optimizer,
                              + f'Loss:{avg_loss:02.5f}, '
                              + f'Train Acc:{avg_acc:02.1f}%')
             wandb.log({'train/loss': float(avg_loss), 'train/acc': float(avg_acc)}, step=global_step)
-
             global_step += 1
 
         tiempo_epochs += time.time() - inicio_epoch
+        wandb.log({'train/loss': float(avg_loss), 'train/acc': float(avg_acc), 'epoch': e})
 
         if e % reports_every == 0:
             sys.stdout.write(', Validating...')
@@ -78,6 +79,15 @@ def train_for_classification(net, dataset, optimizer,
             sys.stdout.write(f', Val Acc:{avg_acc:02.2f}%, '
                              + f'Avg-Time:{tiempo_epochs / e:.3f}s.\n')
             wandb.log({'val/acc': float(avg_acc)}, step=global_step)
+            wandb.log({'val/acc': float(avg_acc), 'epoch': e})
+
+            # checkpointing
+            if avg_acc >= best_acc:
+                best_acc = avg_acc
+                model_name = f"best_{net.__class__.__name__}_{e}.pth"
+                torch.save(net.state_dict(), model_name)
+                wandb.save(model_name)
+
         else:
             sys.stdout.write('\n')
 
