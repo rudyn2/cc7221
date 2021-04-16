@@ -4,12 +4,11 @@ import torch.nn as nn
 import argparse
 import logging
 
-from dataset import ImageDataset
+from dataset import TrainImageDataset
 from resnet50 import ResNet50
 from resnext50 import resnext50
 from alexnet import AlexNet
 from train import train_for_classification
-from resnet import Resnet
 
 
 if __name__ == '__main__':
@@ -40,7 +39,7 @@ if __name__ == '__main__':
 
     logging.info("Setting dataset")
     torch.cuda.empty_cache()
-    train_dataset = ImageDataset(args.data, 224, 224)
+    train_dataset = TrainImageDataset(args.data, 224, 224)
     optimizer = torch.optim.Adam(model.parameters(), args.lr)
     criterion = nn.CrossEntropyLoss()
     config = wandb.config

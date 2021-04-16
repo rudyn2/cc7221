@@ -1,5 +1,6 @@
 import os
 import re
+from abc import ABC
 
 import cv2
 import numpy as np
@@ -12,20 +13,19 @@ class ImageDataset(Dataset):
     STD = [0.229, 0.224, 0.225]
 
     def __init__(self, path: str, width: int, height: int):
-        super(Dataset, self).__init__()
-
+        self.width = width
+        self.height = height
         self.path = path
+        self.dataset_meta = self.define_dataset_meta()
         self.image_paths = self.parse_file(path) or None
         self.image_keys = list(self.image_paths.keys())
         self.image_classes = list(self.image_paths.values())
-        self.width = width
-        self.height = height
 
     def parse_file(self, path: str):
         if not os.path.exists(path):
             raise ValueError("Provided path doesn't exist")
 
-        with open(os.path.join(path, "train_sample.txt"), "r") as f:
+        with open(os.path.join(path, self.dataset_meta), "r") as f:
             lines = f.readlines()
 
         paths = {}
@@ -71,8 +71,29 @@ class ImageDataset(Dataset):
         arr = cv2.resize(arr, dsize=(self.width, self.height))
         arr = np.swapaxes(arr, 0, -1)
         arr = arr.astype(np.float32)
-        # arr = self.transform(arr)
+
         return arr, float(self.image_classes[index])
+
+    def define_dataset_meta(self):
+        raise NotImplementedError
+
+
+class TrainImageDataset(ImageDataset):
+
+    def __init__(self, path: str, width: int, height: int):
+        super(TrainImageDataset, self).__init__(path, width, height)
+
+    def define_dataset_meta(self):
+        return "train_sample.txt"
+
+
+class TestImageDataset(ImageDataset):
+
+    def __init__(self, path: str, width: int, height: int):
+        super(TestImageDataset, self).__init__(path, width, height)
+
+    def define_dataset_meta(self):
+        return "test_sample.txt"
 
 
 class ImageOfflineDataset(ImageDataset):
@@ -92,13 +113,13 @@ class ImageOfflineDataset(ImageDataset):
     def __getitem__(self, item: int):
         return self.processed_images[item], self.labels[item]
 
+    def define_dataset_meta(self):
+        return "train_sample.txt"
+
 
 if __name__ == '__main__':
-    from torch.utils.data import DataLoader
 
-    d = ImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
-    loader = DataLoader(d, batch_size=64)
-    for x, y in loader:
-        x = x.cuda()
-        print(x.shape, x.dtype, x.device)
-        break
+    train_dataset = TrainImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
+    test_dataset = TestImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
+    print(f"Length of train dataset: {len(train_dataset)}")
+    print(f"Length of test dataset: {len(test_dataset)}")
