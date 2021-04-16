@@ -19,10 +19,12 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate')
     parser.add_argument('--epochs', type=int, default=20, help='Number of epochs')
     parser.add_argument('--model', default='resnet', type=str, help='Type of model (resnet, resnext, alexnet)')
+    parser.add_argument('--tag', default='', type=str, help='Optional run tag')
 
     args = parser.parse_args()
 
     wandb.init(project='homework1-cc7221', entity='p137')
+    wandb.run.name = wandb.run.name + args.tag
 
     # model selection
     if args.model == 'resnet':
