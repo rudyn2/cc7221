@@ -16,7 +16,7 @@ class BottleneckBlock(nn.Module):
         self.bn1 = nn.BatchNorm2d(inter_channels)
 
         self.conv2 = nn.Conv2d(inter_channels, inter_channels,
-                               kernel_size=(3, 3), stride=stride, padding=(1, 1))
+                               kernel_size=(3, 3), stride=stride, padding=(1, 1), groups=cardinality)
         self.bn2 = nn.BatchNorm2d(inter_channels)
 
         self.conv3 = nn.Conv2d(inter_channels, out_channels,
