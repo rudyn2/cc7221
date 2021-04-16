@@ -50,10 +50,10 @@ class ResNext(nn.Module):
     def __init__(self, bottleneck_block, layers, image_channels, num_classes):
         super(ResNext, self).__init__()
         self.in_channels = 64
-        self.conv1 = nn.Conv2d(image_channels, 64, kernel_size=(7, 7), stride=(1, 1), padding=(2, 2))
+        self.conv1 = nn.Conv2d(image_channels, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3))
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU()
-        self.maxpool = nn.MaxPool2d(kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        self.maxpool = nn.MaxPool2d(kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
 
         # Arquitectura ResNet
 

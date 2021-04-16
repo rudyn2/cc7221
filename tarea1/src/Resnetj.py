@@ -44,10 +44,10 @@ class ResNet(nn.Module):
     def __init__(self, Res_block, layers, image_channels, num_classes):
         super(ResNet, self).__init__()
         self.in_channels = 64
-        self.conv1 = nn.Conv2d(image_channels, 64, kernel_size=(7, 7), stride=(1, 1), padding=(2, 2))
+        self.conv1 = nn.Conv2d(image_channels, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3))
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU()
-        self.maxpool = nn.MaxPool2d(kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        self.maxpool = nn.MaxPool2d(kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
 
         # Arquitectura ResNet
 
@@ -76,14 +76,14 @@ class ResNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-        hidden = x
+        #hidden = x
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
-        out = x
 
-        return {'hidden': hidden, 'out': out}
+
+        return x
 
     def _make_layer(self, Res_block, num_residual_blocks, inter_channels, stride):
         residual = None
