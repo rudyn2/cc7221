@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
 
-class bottleneck_block(nn.Module):
 
-    def __init__(self, in_channels, out_channels, residual = None, stride=(1,1), cardinality=32):
-        super(bottleneck_block, self).__init__()
+class BottleneckBlock(nn.Module):
+
+    def __init__(self, in_channels, out_channels, residual=None, stride=(1, 1), cardinality=32):
+        super(BottleneckBlock, self).__init__()
         self.expansion = 4
         self.base_width = 4
-        width_ratio = out_channels / (self.expansion*64)
+        width_ratio = out_channels / (self.expansion * 64)
         inter_channels = cardinality * int(self.base_width * width_ratio)
 
         self.conv1 = nn.Conv2d(
@@ -26,7 +27,7 @@ class bottleneck_block(nn.Module):
         self.residual = residual
         self.stride = stride
 
-    def forward(self,x):
+    def forward(self, x):
         identity = x.clone()
 
         x = self.conv1(x)
@@ -95,8 +96,6 @@ class ResNext(nn.Module):
         residual = None
         layers = []
 
-        # si reducimos a la mitad el espacio de entrada, 56x56 -> 28x28 (stride=2), o
-        # los canales cambian necesitamos adaptar la identidad para que se pueda agregar a una capa posterior
         if stride != 1 or self.in_channels != out_channels:
             residual = nn.Sequential(
                 nn.Conv2d(
@@ -112,15 +111,12 @@ class ResNext(nn.Module):
             bottleneck_block(self.in_channels, out_channels, residual, stride)
         )
 
-        # la expansion
         self.in_channels = out_channels
-
-        # Se agregan los bloques necesarios
         for i in range(num_residual_blocks - 1):
             layers.append(bottleneck_block(self.in_channels, out_channels))
 
         return nn.Sequential(*layers)
 
 
-def ResNext50(img_channel=3, num_classes=19):
-    return ResNext(bottleneck_block, [3, 4, 6, 3], img_channel, num_classes)
+def resnext50(img_channel=3, num_classes=19):
+    return ResNext(BottleneckBlock, [3, 4, 6, 3], img_channel, num_classes)
