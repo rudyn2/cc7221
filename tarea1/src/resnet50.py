@@ -1,11 +1,12 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
-class Res_block(nn.Module):
+class ResBlock(nn.Module):
     def __init__(
             self, in_channels, inter_channels, residual=None, stride=(1, 1)):
-        super(Res_block, self).__init__()
+        super(ResBlock, self).__init__()
         self.expansion = 4
         self.conv1 = nn.Conv2d(
             in_channels, inter_channels, kernel_size=(1, 1), stride=(1, 1), padding=(0, 0))
@@ -51,18 +52,10 @@ class ResNet(nn.Module):
 
         # Arquitectura ResNet
 
-        self.layer1 = self._make_layer(
-            Res_block, layers[0], inter_channels=64, stride=(1, 1)
-        )
-        self.layer2 = self._make_layer(
-            Res_block, layers[1], inter_channels=128, stride=(2, 2)
-        )
-        self.layer3 = self._make_layer(
-            Res_block, layers[2], inter_channels=256, stride=(2, 2)
-        )
-        self.layer4 = self._make_layer(
-            Res_block, layers[3], inter_channels=512, stride=(2, 2)
-        )
+        self.layer1 = self._make_layer(Res_block, layers[0], inter_channels=64, stride=(1, 1))
+        self.layer2 = self._make_layer(Res_block, layers[1], inter_channels=128, stride=(2, 2))
+        self.layer3 = self._make_layer(Res_block, layers[2], inter_channels=256, stride=(2, 2))
+        self.layer4 = self._make_layer(Res_block, layers[3], inter_channels=512, stride=(2, 2))
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * 4, num_classes)
@@ -76,12 +69,11 @@ class ResNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-        #hidden = x
+        # hidden = x
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
-
 
         return x
 
@@ -117,4 +109,12 @@ class ResNet(nn.Module):
 
 
 def ResNet50(img_channel=3, num_classes=19):
-    return ResNet(Res_block, [3, 4, 6, 3], img_channel, num_classes)
+    return ResNet(ResBlock, [3, 4, 6, 3], img_channel, num_classes)
+
+
+if __name__ == '__main__':
+    x = torch.rand((64, 3, 224, 224))
+    x = x.to('cuda')
+    m = ResNet50()
+    m.to('cuda')
+    y = m(x)

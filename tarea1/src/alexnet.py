@@ -37,4 +37,4 @@ class AlexNet(nn.Module):
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.classifier(x)
-        return {'logits': x}
+        return x
