@@ -92,7 +92,7 @@ class ImageDataset(Dataset):
         arr = np.swapaxes(arr, 0, -1)
         arr = arr.astype(np.float32)
 
-        return arr, float(self.image_classes[index])
+        return arr, int(self.image_classes[index])
 
     def define_dataset_meta(self):
         raise NotImplementedError

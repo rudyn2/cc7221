@@ -94,6 +94,7 @@ def train_for_classification(net, dataset, optimizer,
 
 
 def eval_net(device, net, criterion, test_loader):
+    net.to(device)
     net.eval()
     running_acc = 0.0
     total_items_test = 0
@@ -104,15 +105,26 @@ def eval_net(device, net, criterion, test_loader):
         images, labels = images.to(device), labels.to(device)
         logits = net(images.float())
 
-        y_pred = logits.type(torch.DoubleTensor)  # probability distribution over classes
-        labels = labels.type(torch.LongTensor)
-        loss = criterion(y_pred, labels)
+        y_pred = logits.type(torch.DoubleTensor).to(device)
         _, max_idx = torch.max(logits, dim=1)
 
         running_acc += torch.sum(max_idx == labels).item()
         total_items_test += len(labels)
+
+        loss = criterion(y_pred, labels)
         total_loss_test += loss.item()
 
     avg_acc = (running_acc / total_items_test) * 100
-    avg_loss = total_loss_test / total_items_test
+    avg_loss = total_loss_test / len(test_loader)
     return avg_acc, avg_loss
+
+
+if __name__ == '__main__':
+    from resnet50 import ResNet50
+    import torch.nn as nn
+    from dataset import TestImageDataset
+
+    test_dataset = TestImageDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
+    test_loader = DataLoader(test_dataset, batch_size=8, shuffle=True, num_workers=2, pin_memory=True)
+    model = ResNet50(img_channel=3, num_classes=19)
+    print(eval_net('cuda', model, nn.CrossEntropyLoss(), test_loader))
