@@ -40,7 +40,7 @@ class ImageDataset(Dataset):
         THIS METHOD DOESN'T SAVE THE STATS
         BE CAREFULLY, THIS IS DANGEROUS CODE
         """
-
+ 
         train_stacked = []
         for k in tqdm(range(len(self.image_keys)), "Reading images"):
             arr = self[k]
@@ -60,8 +60,8 @@ class ImageDataset(Dataset):
 
     def smart_resize(self, arr):
         ratio = self.width / min(arr.shape[:2])
-        new_width = arr.shape[0] * ratio
-        new_height = arr.shape[1] * ratio
+        new_width = round(arr.shape[0] * ratio)
+        new_height = round(arr.shape[1] * ratio)
         arr_resized = cv2.resize(arr, dsize=(int(new_height), int(new_width)))
         if arr_resized.shape[1] > arr_resized.shape[0]:
             diff = arr_resized.shape[1] - self.width
@@ -71,6 +71,7 @@ class ImageDataset(Dataset):
             diff = arr_resized.shape[0] - self.width
             half = int(diff / 2)
             arr_cropped = arr_resized[half: half + self.width, :]
+
         return arr_cropped
 
     def __getitem__(self, index: int):
@@ -79,6 +80,10 @@ class ImageDataset(Dataset):
 
         arr = cv2.imread(os.path.join(self.path, self.image_keys[index]), cv2.IMREAD_COLOR)
         arr = self.smart_resize(arr)
+
+        if arr.shape[0] != 224 or arr.shape[1] != 224:
+            print(index)
+
         # arr = cv2.resize(arr, dsize=(self.width, self.height))
         arr = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB) / 255.0
         for c in range(2):
@@ -134,7 +139,14 @@ class ImageOfflineDataset(ImageDataset):
 
 if __name__ == '__main__':
 
-    train_dataset = TrainImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
-    test_dataset = TestImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
+    from torch.utils.data import DataLoader
+
+    train_dataset = TrainImageDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
+    # test_dataset = TestImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
     print(f"Length of train dataset: {len(train_dataset)}")
-    print(f"Length of test dataset: {len(test_dataset)}")
+    # print(f"Length of test dataset: {len(test_dataset)}")
+    e = train_dataset[3]
+    train_dataloader = DataLoader(train_dataset, batch_size=64, pin_memory=True, shuffle=True)
+    for i in tqdm(range(len(train_dataset))):
+        img, label = train_dataset[i]
+
