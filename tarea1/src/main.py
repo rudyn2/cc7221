@@ -61,6 +61,6 @@ if __name__ == '__main__':
     wandb.log({'metrics': fig_metrics})
 
     logging.info("Saving...")
-    model_name = f"last_{model.__class__.__name__}_{args.epochs}.pth"
+    model_name = f"last_{model.__class__.__name__}.pth"
     torch.save(model.state_dict(), model_name)
     wandb.save(model_name)
