@@ -61,11 +61,10 @@ def train_for_classification(net, dataset, optimizer,
                              + (f'lr:{lr_scheduler.get_last_lr()[0]:02.7f}, ' if lr_scheduler is not None else '')
                              + f'Loss:{avg_loss:02.5f}, '
                              + f'Train Acc:{avg_acc:02.1f}%')
-            wandb.log({'train/loss': float(avg_loss), 'train/acc': float(avg_acc)}, step=global_step)
+            wandb.log({'train/loss': float(avg_loss), 'train/acc': float(avg_acc)})
             global_step += 1
 
         tiempo_epochs += time.time() - inicio_epoch
-        wandb.log({'train/loss': float(avg_loss), 'train/acc': float(avg_acc), 'epoch': e})
         train_loss.append(avg_loss)
         train_acc.append(avg_acc)
 
