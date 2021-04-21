@@ -9,6 +9,7 @@ from resnet50 import ResNet50
 from resnext50 import resnext50
 from alexnet import AlexNet
 from train import train_for_classification
+from utils import plot_metrics
 
 
 if __name__ == '__main__':
@@ -52,8 +53,12 @@ if __name__ == '__main__':
     config.model = args.model
 
     logging.info("Training...")
-    train_for_classification(net=model, dataset=train_dataset, batch_size=args.batch_size,
-                             optimizer=optimizer, criterion=criterion, epochs=args.epochs)
+    train_loss, train_acc, test_acc, test_loss = train_for_classification(net=model, dataset=train_dataset,
+                                                                          batch_size=args.batch_size,
+                                                                          optimizer=optimizer, criterion=criterion,
+                                                                          epochs=args.epochs)
+    fig_metrics = plot_metrics(train_loss, train_acc, test_loss, test_acc, f"{model.__class__.__name__}_metrics.png")
+    wandb.log({'metrics': fig_metrics})
 
     logging.info("Saving...")
     model_name = f"last_{model.__class__.__name__}_{args.epochs}.pth"

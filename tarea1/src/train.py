@@ -24,7 +24,7 @@ def train_for_classification(net, dataset, optimizer,
     tiempo_epochs = 0
     global_step = 0
     best_acc = 0
-    train_loss, train_acc, test_acc = [], [], []
+    train_loss, train_acc, test_acc, test_loss = [], [], [], []
 
     for e in range(1, epochs + 1):
         inicio_epoch = time.time()
@@ -67,48 +67,52 @@ def train_for_classification(net, dataset, optimizer,
 
         tiempo_epochs += time.time() - inicio_epoch
         wandb.log({'train/loss': float(avg_loss), 'train/acc': float(avg_acc), 'epoch': e})
+        train_loss.append(avg_loss)
+        train_acc.append(avg_acc)
 
-        if e % reports_every == 0:
-            sys.stdout.write(', Validating...')
+        sys.stdout.write(', Validating...')
+        avg_acc, avg_loss = eval_net(device, net, criterion, val_loader)
+        test_acc.append(avg_acc)
+        test_loss.append(avg_loss)
+        sys.stdout.write(f', Val Acc:{avg_acc:02.2f}%, '
+                         + f'Avg-Time:{tiempo_epochs / e:.3f}s.\n')
+        wandb.log({'val/acc': float(avg_acc), 'val/loss': float(avg_loss)})
 
-            train_loss.append(avg_loss)
-            train_acc.append(avg_acc)
+        # checkpointing
+        if avg_acc >= best_acc:
+            best_acc = avg_acc
+            model_name = f"best_{net.__class__.__name__}_{e}.pth"
+            torch.save(net.state_dict(), model_name)
+            wandb.save(model_name)
 
-            avg_acc = eval_net(device, net, val_loader)
-            test_acc.append(avg_acc)
-            sys.stdout.write(f', Val Acc:{avg_acc:02.2f}%, '
-                             + f'Avg-Time:{tiempo_epochs / e:.3f}s.\n')
-            wandb.log({'val/acc': float(avg_acc)}, step=global_step)
-            wandb.log({'val/acc': float(avg_acc), 'epoch': e})
-
-            # checkpointing
-            if avg_acc >= best_acc:
-                best_acc = avg_acc
-                model_name = f"best_{net.__class__.__name__}_{e}.pth"
-                torch.save(net.state_dict(), model_name)
-                wandb.save(model_name)
-
-        else:
-            sys.stdout.write('\n')
+        sys.stdout.write('\n')
 
         if lr_scheduler is not None:
             lr_scheduler.step()
 
-    return train_loss, (train_acc, test_acc)
+    return train_loss, train_acc, test_acc, test_loss
 
 
-def eval_net(device, net, test_loader):
+def eval_net(device, net, criterion, test_loader):
     net.eval()
     running_acc = 0.0
-    total_test = 0
+    total_items_test = 0
+    total_loss_test = 0
 
     for i, data in enumerate(test_loader):
         images, labels = data
         images, labels = images.to(device), labels.to(device)
         logits = net(images.float())
-        _, max_idx = torch.max(logits, dim=1)
-        running_acc += torch.sum(max_idx == labels).item()
-        total_test += len(labels)
 
-    avg_acc = (running_acc / total_test) * 100
-    return avg_acc
+        y_pred = logits.type(torch.DoubleTensor)  # probability distribution over classes
+        labels = labels.type(torch.LongTensor)
+        loss = criterion(y_pred, labels)
+        _, max_idx = torch.max(logits, dim=1)
+
+        running_acc += torch.sum(max_idx == labels).item()
+        total_items_test += len(labels)
+        total_loss_test += loss.item()
+
+    avg_acc = (running_acc / total_items_test) * 100
+    avg_loss = total_loss_test / total_items_test
+    return avg_acc, avg_loss
