@@ -17,7 +17,7 @@ if __name__ == '__main__':
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--data', required=True, type=str, help='Path to folder containing dataset')
     parser.add_argument('--batch-size', type=int, default=64, help='Batch size')
-    parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate')
+    parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--epochs', type=int, default=20, help='Number of epochs')
     parser.add_argument('--model', default='resnet', type=str, help='Type of model (resnet, resnext, alexnet)')
     parser.add_argument('--tag', default='', type=str, help='Optional run tag')
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     torch.cuda.empty_cache()
     train_dataset = TrainImageDataset(args.data, 224, 224)
     optimizer = torch.optim.Adam(model.parameters(), args.lr)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=15, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     criterion = nn.CrossEntropyLoss()
     config = wandb.config
 
