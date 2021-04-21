@@ -79,7 +79,7 @@ def train_for_classification(net, dataset, optimizer,
         # checkpointing
         if avg_acc >= best_acc:
             best_acc = avg_acc
-            model_name = f"best_{net.__class__.__name__}_{e}.pth"
+            model_name = f"best_{net.__class__.__name__}.pth"
             torch.save(net.state_dict(), model_name)
             wandb.save(model_name)
 
