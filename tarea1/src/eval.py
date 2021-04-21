@@ -1,10 +1,9 @@
 import argparse
 from collections import defaultdict
 from typing import Tuple, List
+
 import matplotlib.pyplot as plt
 import numpy as np
-
-
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -80,15 +79,18 @@ class Evaluator:
 
     def plot_class_accuracy(self, models: List[torch.nn.Module], labels: list, save_path: str):
 
+        # TODO: Make this code generalize for any number of models
+        assert len(models) == 3
+
         x = np.arange(len(labels))  # the label locations
-        width = 0.35  # the width of the bars
+        width = 0.25  # the width of the bars
 
         fig, ax = plt.subplots()
         rects = []
         for i, m in enumerate(models):
             name = m.__class__.__name__
             values = self.model_accuracies[name]['class_acc'].values()
-            rect = ax.bar(x - width / 2 + i * width / (len(models)-1), values, width, label=name)
+            rect = ax.bar(x - width * np.floor(len(models) / 2) + i * width, values, width, label=name)
             rects.append(rect)
 
         # Add some text for labels, title and custom x-axis tick labels, etc.
@@ -96,12 +98,17 @@ class Evaluator:
         ax.set_xlabel('Clase')
         ax.set_title('Accuracy por clase y modelo')
         ax.set_xticks(x)
+        ax.set_xticklabels(ax.get_xticks(), rotation=90)
         ax.set_xticklabels(labels)
         ax.legend()
 
         fig.tight_layout()
         plt.savefig(save_path, dpi=200)
         plt.show()
+
+    def print_results(self):
+        for m in self.model_accuracies.keys():
+            print(f"Model: {m}, Test accuracy: {self.model_accuracies[m]['mean_acc']:.3f}")
 
 
 def select_model_by_name(name: str):
@@ -127,6 +134,8 @@ if __name__ == '__main__':
     parser.add_argument('--models', default='resnet', type=str, help='Type of model (resnet, resnext, alexnet)')
     parser.add_argument('--device', default='cuda', type=str, help='Device in which to perform the evaluation')
     parser.add_argument('--weights', required=True, type=str, help='Path to weights of specified model')
+    parser.add_argument('--output_image', default='models_acc.png', type=str,
+                        help='Output path of per-class model results')
     parser.add_argument('--batch-size', default=8, type=int, help='Batch size used to evaluate model')
 
     args = parser.parse_args()
@@ -154,6 +163,10 @@ if __name__ == '__main__':
     # create test dataset
     test_dataset = TestImageDataset(args.data, 224, 224)
     true_labels = list(range(19))
+    xtick_labels = list(test_dataset.read_mapping().values())
+
+    # evaluate
     e = Evaluator(test_dataset, true_labels, batch_size=args.batch_size)
     e.calculate_models_accuracy(models)
-    e.plot_class_accuracy(models[:1], true_labels, "test1.png")
+    e.plot_class_accuracy(models, xtick_labels, args.output_image)
+    e.print_results()

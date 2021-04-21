@@ -97,6 +97,17 @@ class ImageDataset(Dataset):
     def define_dataset_meta(self):
         raise NotImplementedError
 
+    def read_mapping(self):
+        with open(os.path.join(self.path, "mapping.txt"), "r") as f:
+            lines = f.readlines()
+
+        mapping = {}
+        for line in lines:
+            s = re.split(r'\t+', line.rstrip().rstrip('\t'))
+            mapping[int(s[1])] = s[0]
+
+        return mapping
+
 
 class TrainImageDataset(ImageDataset):
 
@@ -141,7 +152,8 @@ if __name__ == '__main__':
 
     from torch.utils.data import DataLoader
 
-    train_dataset = TrainImageDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
+    train_dataset = TrainImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
+    train_dataset.read_mapping()
     # test_dataset = TestImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
     print(f"Length of train dataset: {len(train_dataset)}")
     # print(f"Length of test dataset: {len(test_dataset)}")
