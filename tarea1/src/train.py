@@ -10,7 +10,6 @@ def train_for_classification(net, dataset, optimizer,
                              criterion, lr_scheduler=None,
                              epochs: int = 1,
                              batch_size: int = 64,
-                             reports_every: int = 1,
                              device: str = 'cuda',
                              val_percent: float = 0.1):
     net.to(device)
@@ -94,7 +93,6 @@ def train_for_classification(net, dataset, optimizer,
 
 
 def eval_net(device, net, criterion, test_loader):
-    net.to(device)
     net.eval()
     running_acc = 0.0
     total_items_test = 0

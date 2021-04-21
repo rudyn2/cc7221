@@ -44,6 +44,7 @@ if __name__ == '__main__':
     torch.cuda.empty_cache()
     train_dataset = TrainImageDataset(args.data, 224, 224)
     optimizer = torch.optim.Adam(model.parameters(), args.lr)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=15, gamma=0.1)
     criterion = nn.CrossEntropyLoss()
     config = wandb.config
 
@@ -54,6 +55,7 @@ if __name__ == '__main__':
 
     logging.info("Training...")
     train_loss, train_acc, test_acc, test_loss = train_for_classification(net=model, dataset=train_dataset,
+                                                                          lr_scheduler=scheduler,
                                                                           batch_size=args.batch_size,
                                                                           optimizer=optimizer, criterion=criterion,
                                                                           epochs=args.epochs)
