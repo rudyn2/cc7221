@@ -40,7 +40,7 @@ class ImageDataset(Dataset):
             transforms.Resize(224),
             transforms.CenterCrop((224, 224)),
             RotationTransform(90),
-            transforms.Normalize(self.MEAN, self.STD),
+            # transforms.Normalize(self.MEAN, self.STD),
         ])
         self.data_aug_operations = [
             transforms.RandomRotation(degrees=[-90, 90]),
@@ -174,7 +174,7 @@ if __name__ == '__main__':
 
     #
     train_dataset = TrainImageDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
-    train_dataset.calculate_stats()
+    # train_dataset.calculate_stats()
     train_dataset.read_mapping()
     # test_dataset = TestImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
     print(f"Length of train dataset: {len(train_dataset)}")
