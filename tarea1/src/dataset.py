@@ -74,11 +74,11 @@ class ImageDataset(Dataset):
         train_stacked = []
         for k in tqdm(range(len(self.image_keys)), "Reading images"):
             arr = self[k]
-            train_stacked.append(arr)
+            train_stacked.append(arr[0])
 
         train_stacked = np.stack(train_stacked)
-        means = [np.mean(train_stacked[:, :, :, i]) for i in range(2)]
-        stds = [np.std(train_stacked[:, :, :, i]) for i in range(2)]
+        means = [np.mean(train_stacked[:, :, :, i]) for i in range(3)]
+        stds = [np.std(train_stacked[:, :, :, i]) for i in range(3)]
 
         print("Mean per channel: ", means)
         print("Standard deviation per channel: ", stds)
@@ -174,6 +174,7 @@ if __name__ == '__main__':
 
     #
     train_dataset = TrainImageDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
+    train_dataset.calculate_stats()
     train_dataset.read_mapping()
     # test_dataset = TestImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
     print(f"Length of train dataset: {len(train_dataset)}")
@@ -182,4 +183,5 @@ if __name__ == '__main__':
     train_dataloader = DataLoader(train_dataset, batch_size=64, pin_memory=True, shuffle=True)
     for i in tqdm(range(len(train_dataset))):
         img, label = train_dataset[i]
+        break
 
