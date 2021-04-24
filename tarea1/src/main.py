@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     logging.info("Setting dataset")
     torch.cuda.empty_cache()
-    train_dataset = TrainImageDataset(args.data, 224, 224)
+    train_dataset = TrainImageDataset(args.data, 224, 224, use_data_augmentation=True)
     optimizer = torch.optim.Adam(model.parameters(), args.lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     criterion = nn.CrossEntropyLoss()

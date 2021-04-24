@@ -130,8 +130,8 @@ class ImageDataset(Dataset):
 
 class TrainImageDataset(ImageDataset):
 
-    def __init__(self, path: str, width: int, height: int):
-        super(TrainImageDataset, self).__init__(path, width, height)
+    def __init__(self, path: str, width: int, height: int, use_data_augmentation: bool = False):
+        super(TrainImageDataset, self).__init__(path, width, height, use_data_augmentation)
 
     def define_dataset_meta(self):
         return "train_sample.txt"
