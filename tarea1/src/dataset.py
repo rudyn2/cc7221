@@ -5,13 +5,27 @@ import cv2
 import numpy as np
 from torch.utils.data import Dataset
 from tqdm import tqdm
+from torchvision import transforms
+import torchvision.transforms.functional as TF
+import random
+from PIL import Image
+
+
+class RotationTransform:
+    """Rotate by one of the given angles."""
+
+    def __init__(self, angle):
+        self.angle = angle
+
+    def __call__(self, x):
+        return TF.rotate(x, self.angle)
 
 
 class ImageDataset(Dataset):
     MEAN = [0.485, 0.456, 0.406]
     STD = [0.229, 0.224, 0.225]
 
-    def __init__(self, path: str, width: int, height: int):
+    def __init__(self, path: str, width: int, height: int, use_data_augmentation: bool = False):
         self.width = width
         self.height = height
         self.path = path
@@ -19,6 +33,21 @@ class ImageDataset(Dataset):
         self.image_paths = self.parse_file(path) or None
         self.image_keys = list(self.image_paths.keys())
         self.image_classes = list(self.image_paths.values())
+
+        self.use_data_augmentation = use_data_augmentation
+        self.process_image_pipeline = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.CenterCrop((224, 224)),
+            RotationTransform(90),
+            transforms.Normalize(self.MEAN, self.STD),
+        ])
+        self.data_aug_operations = [
+            transforms.RandomRotation(degrees=[-90, 90]),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+
+        ]
+        self.data_aug = transforms.RandomApply(self.data_aug_operations)
 
     def parse_file(self, path: str):
         if not os.path.exists(path):
@@ -40,7 +69,7 @@ class ImageDataset(Dataset):
         THIS METHOD DOESN'T SAVE THE STATS
         BE CAREFULLY, THIS IS DANGEROUS CODE
         """
- 
+
         train_stacked = []
         for k in tqdm(range(len(self.image_keys)), "Reading images"):
             arr = self[k]
@@ -71,26 +100,16 @@ class ImageDataset(Dataset):
             diff = arr_resized.shape[0] - self.width
             half = int(diff / 2)
             arr_cropped = arr_resized[half: half + self.width, :]
-
         return arr_cropped
 
     def __getitem__(self, index: int):
 
         assert index < len(self), f"Index must be less or equal to {len(self) - 1}"
 
-        arr = cv2.imread(os.path.join(self.path, self.image_keys[index]), cv2.IMREAD_COLOR)
-        arr = self.smart_resize(arr)
-
-        if arr.shape[0] != 224 or arr.shape[1] != 224:
-            print(index)
-
-        # arr = cv2.resize(arr, dsize=(self.width, self.height))
-        arr = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB) / 255.0
-        for c in range(2):
-            arr[:, :, c] = (arr[:, :, c] - self.MEAN[c]) / self.STD[c]
-
-        arr = np.swapaxes(arr, 0, -1)
-        arr = arr.astype(np.float32)
+        arr = Image.open(os.path.join(self.path, self.image_keys[index]))
+        arr = self.process_image_pipeline(arr)
+        if self.use_data_augmentation:
+            arr = self.data_aug(arr)
 
         return arr, int(self.image_classes[index])
 
@@ -152,7 +171,8 @@ if __name__ == '__main__':
 
     from torch.utils.data import DataLoader
 
-    train_dataset = TrainImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
+    #
+    train_dataset = TrainImageDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
     train_dataset.read_mapping()
     # test_dataset = TestImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
     print(f"Length of train dataset: {len(train_dataset)}")

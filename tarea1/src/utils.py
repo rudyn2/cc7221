@@ -26,16 +26,20 @@ def plot_metrics(train_loss: list, train_acc: list, test_loss: list, test_acc: l
 
     plt.tight_layout()
     plt.savefig(fig_name, dpi=200)
-    plt.show()
-
     return fig
 
 
 if __name__ == '__main__':
     import numpy as np
+    import wandb
+
+
     t1 = np.random.rand(10)
     t2 = np.random.rand(10)
     t3 = np.random.rand(10)
     t4 = np.random.rand(10)
 
-    plot_metrics(t1, t2, t3, t4, 'test_fig.png')
+    fig = plot_metrics(t1, t2, t3, t4, 'test_fig.png')
+
+    wandb.init(project='homework1-cc7221', entity='p137')
+    wandb.log({'charasdast': fig})

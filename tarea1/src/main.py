@@ -60,7 +60,7 @@ if __name__ == '__main__':
                                                                           optimizer=optimizer, criterion=criterion,
                                                                           epochs=args.epochs)
     fig_metrics = plot_metrics(train_loss, train_acc, test_loss, test_acc, f"{model.__class__.__name__}_metrics.png")
-    wandb.log({'metrics': fig_metrics})
+    wandb.log({'metrics': wandb.Image(fig_metrics)})
     wandb.log({'metrics_file': wandb.Image(f"{model.__class__.__name__}_metrics.png")})
 
     logging.info("Saving...")
