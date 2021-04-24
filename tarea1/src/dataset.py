@@ -37,6 +37,7 @@ class ImageDataset(Dataset):
         self.use_data_augmentation = use_data_augmentation
         self.process_image_pipeline = transforms.Compose([
             transforms.ToTensor(),
+            transforms.Resize(224),
             transforms.CenterCrop((224, 224)),
             RotationTransform(90),
             transforms.Normalize(self.MEAN, self.STD),
