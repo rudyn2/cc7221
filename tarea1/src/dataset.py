@@ -42,7 +42,7 @@ class ImageDataset(Dataset):
             transforms.Resize(224),
             transforms.CenterCrop((224, 224)),
             RotationTransform(90),
-            # transforms.Normalize(self.MEAN, self.STD),
+            transforms.Normalize(self.MEAN, self.STD),
         ])
         self.data_aug_operations = [
             transforms.RandomRotation(degrees=[-90, 90]),
