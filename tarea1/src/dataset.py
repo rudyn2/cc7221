@@ -175,7 +175,7 @@ if __name__ == '__main__':
     from torch.utils.data import DataLoader
 
     #
-    train_dataset = TrainImageDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
+    train_dataset = TrainImageDataset(r"C:\Users\aleja\Desktop\Tareas\Reconocimiento Virtual con Deep Learning\Tarea1\Imagenes\clothing-small", 224, 224)
     train_dataset.calculate_stats()
     train_dataset.read_mapping()
     # test_dataset = TestImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)

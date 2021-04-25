@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class BottleneckBlock(nn.Module):
 
-    def __init__(self, in_channels, out_channels, residual=None, stride=(1, 1), cardinality=32):
+    def __init__(self, in_channels, out_channels, residual=None, stride=(1, 1), cardinality=32, dropout_prob=0.5):
         super(BottleneckBlock, self).__init__()
         self.expansion = 4
         self.base_width = 4
@@ -13,31 +13,40 @@ class BottleneckBlock(nn.Module):
 
         self.conv1 = nn.Conv2d(
             in_channels, inter_channels, kernel_size=(1, 1), stride=(1, 1), padding=(0, 0))
+        self.drop1 = nn.Dropout2d(p=dropout_prob)
+
         self.bn1 = nn.BatchNorm2d(inter_channels)
 
         self.conv2 = nn.Conv2d(inter_channels, inter_channels,
                                kernel_size=(3, 3), stride=stride, padding=(1, 1), groups=cardinality)
+        self.drop2 = nn.Dropout2d(p=dropout_prob)
         self.bn2 = nn.BatchNorm2d(inter_channels)
 
         self.conv3 = nn.Conv2d(inter_channels, out_channels,
                                kernel_size=(1, 1), stride=(1, 1), padding=(0, 0))
+        self.drop3 = nn.Dropout2d(p=dropout_prob)
         self.bn3 = nn.BatchNorm2d(out_channels)
 
         self.relu = nn.ReLU()
         self.residual = residual
         self.stride = stride
 
-    def forward(self, x):
+    def forward(self, x, predict = False):
         identity = x.clone()
 
+
         x = self.conv1(x)
+        x = self.drop1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.conv2(x)
+        x = self.drop2(x)
         x = self.bn2(x)
         x = self.relu(x)
         x = self.conv3(x)
+        x = self.drop3(x)
         x = self.bn3(x)
+
 
         if self.residual != None:
             identity = self.residual(identity)
