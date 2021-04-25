@@ -22,8 +22,10 @@ class RotationTransform:
 
 
 class ImageDataset(Dataset):
-    MEAN = [0.485, 0.456, 0.406]
-    STD = [0.229, 0.224, 0.225]
+    # MEAN = [0.485, 0.456, 0.406]
+    # STD = [0.229, 0.224, 0.225]
+    MEAN = [0.5457574, 0.49972787, 0.47929478]
+    STD = [0.18881057, 0.18312807, 0.18848157]
 
     def __init__(self, path: str, width: int, height: int, use_data_augmentation: bool = False):
         self.width = width
@@ -70,18 +72,18 @@ class ImageDataset(Dataset):
         THIS METHOD DOESN'T SAVE THE STATS
         BE CAREFULLY, THIS IS DANGEROUS CODE
         """
-
-        train_stacked = []
+        r_means = []
+        g_means = []
+        b_means = []
         for k in tqdm(range(len(self.image_keys)), "Reading images"):
-            arr = self[k]
-            train_stacked.append(arr[0])
+            arr = self[k][0]
+            arr = arr.numpy()
+            r_means.append(np.mean(arr[0, :, :]))
+            g_means.append(np.mean(arr[1, :, :]))
+            b_means.append(np.mean(arr[2, :, :]))
 
-        train_stacked = np.stack(train_stacked)
-        means = [np.mean(train_stacked[:, :, :, i]) for i in range(3)]
-        stds = [np.std(train_stacked[:, :, :, i]) for i in range(3)]
-
-        print("Mean per channel: ", means)
-        print("Standard deviation per channel: ", stds)
+        print("Mean per channel: ", np.mean(r_means), np.mean(g_means), np.mean(b_means))
+        print("Standard deviation per channel: ", np.std(r_means), np.std(g_means), np.std(b_means))
 
     def __len__(self):
         if self.image_paths:
@@ -174,7 +176,7 @@ if __name__ == '__main__':
 
     #
     train_dataset = TrainImageDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
-    # train_dataset.calculate_stats()
+    train_dataset.calculate_stats()
     train_dataset.read_mapping()
     # test_dataset = TestImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
     print(f"Length of train dataset: {len(train_dataset)}")
