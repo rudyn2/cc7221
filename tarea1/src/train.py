@@ -118,10 +118,11 @@ def eval_net(device, net, criterion, test_loader):
 
 if __name__ == '__main__':
     from resnet50 import ResNet50
+    from resnext50 import resnext50
     import torch.nn as nn
     from dataset import TestImageDataset
 
-    test_dataset = TestImageDataset(r"C:\Users\C0101\PycharmProjects\cc7221\data\clothing-small", 224, 224)
+    test_dataset = TestImageDataset(r"C:\Users\aleja\Desktop\Tareas\Reconocimiento Virtual con Deep Learning\Tarea1\Imagenes\clothing-small", 224, 224)
     test_loader = DataLoader(test_dataset, batch_size=8, shuffle=True, num_workers=2, pin_memory=True)
     model = ResNet50(img_channel=3, num_classes=19)
     print(eval_net('cuda', model, nn.CrossEntropyLoss(), test_loader))

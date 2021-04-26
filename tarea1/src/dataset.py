@@ -3,11 +3,15 @@ import re
 
 import cv2
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 from torchvision import transforms
 import torchvision.transforms.functional as TF
 import random
+import kornia.augmentation as K
+import torch.nn as nn
+
 from PIL import Image
 
 
@@ -44,13 +48,22 @@ class ImageDataset(Dataset):
             RotationTransform(90),
             transforms.Normalize(self.MEAN, self.STD),
         ])
-        self.data_aug_operations = [
-            transforms.RandomRotation(degrees=[-90, 90]),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
+        #self.data_aug_operations = [
+        #    transforms.RandomRotation(degrees=[-90, 90]),
+        #    transforms.RandomHorizontalFlip(),
+        #    transforms.RandomVerticalFlip(),
 
-        ]
-        self.data_aug = transforms.RandomApply(self.data_aug_operations)
+        #]
+        #self.data_aug = transforms.RandomApply(self.data_aug_operations)
+
+        self.transform = nn.Sequential(
+            K.RandomHorizontalFlip(),
+            K.RandomVerticalFlip(),
+            K.RandomRotation(degrees=[-90,90]),
+        )
+
+        device = torch.device('cuda')
+
 
     def parse_file(self, path: str):
         if not os.path.exists(path):
@@ -112,7 +125,8 @@ class ImageDataset(Dataset):
         arr = Image.open(os.path.join(self.path, self.image_keys[index]))
         arr = self.process_image_pipeline(arr)
         if self.use_data_augmentation:
-            arr = self.data_aug(arr)
+            #arr = self.data_aug(arr)
+            arr = self.transform(arr)
 
         return arr, int(self.image_classes[index])
 
