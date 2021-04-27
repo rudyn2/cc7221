@@ -2,6 +2,7 @@ import os
 import re
 
 import cv2
+import kornia.augmentation
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -57,9 +58,10 @@ class ImageDataset(Dataset):
         #self.data_aug = transforms.RandomApply(self.data_aug_operations)
 
         self.transform = nn.Sequential(
-            K.RandomHorizontalFlip(),
-            K.RandomVerticalFlip(),
-            K.RandomRotation(degrees=[-90,90]),
+            K.augmentation.RandomRotation(degrees=[-90,90]),
+            K.augmentation.RandomHorizontalFlip(),
+            K.augmentation.RandomVerticalFlip(),
+
         )
 
         device = torch.device('cuda')
