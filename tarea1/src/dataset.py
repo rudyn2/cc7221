@@ -49,19 +49,18 @@ class ImageDataset(Dataset):
             RotationTransform(90),
             transforms.Normalize(self.MEAN, self.STD),
         ])
-        #self.data_aug_operations = [
-        #    transforms.RandomRotation(degrees=[-90, 90]),
-        #    transforms.RandomHorizontalFlip(),
-        #    transforms.RandomVerticalFlip(),
+        self.data_aug_operations = [
+            transforms.RandomRotation(degrees=[-90, 90]),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
 
-        #]
-        #self.data_aug = transforms.RandomApply(self.data_aug_operations)
+        ]
+        self.data_aug = transforms.RandomApply(self.data_aug_operations)
 
         self.transform = nn.Sequential(
             K.augmentation.RandomRotation(degrees=[-90,90]),
             K.augmentation.RandomHorizontalFlip(),
             K.augmentation.RandomVerticalFlip(),
-
         )
 
         device = torch.device('cuda')
@@ -127,8 +126,9 @@ class ImageDataset(Dataset):
         arr = Image.open(os.path.join(self.path, self.image_keys[index]))
         arr = self.process_image_pipeline(arr)
         if self.use_data_augmentation:
-            #arr = self.data_aug(arr)
+            arr2 = self.data_aug(arr)
             arr = self.transform(arr)
+            print(arr.shape,arr2.shape)
 
         return arr, int(self.image_classes[index])
 
