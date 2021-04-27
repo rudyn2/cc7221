@@ -126,9 +126,9 @@ class ImageDataset(Dataset):
         arr = Image.open(os.path.join(self.path, self.image_keys[index]))
         arr = self.process_image_pipeline(arr)
         if self.use_data_augmentation:
-            arr2 = self.data_aug(arr)
+            #arr2 = self.data_aug(arr)
             arr = self.transform(arr)
-            print(arr.shape,arr2.shape)
+            arr = arr[0]
 
         return arr, int(self.image_classes[index])
 
