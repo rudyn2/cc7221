@@ -5,20 +5,20 @@ import torch.nn.functional as F
 
 class ResBlock(nn.Module):
     def __init__(
-            self, in_channels, inter_channels, residual=None, stride=(1, 1), dropout_prob = 0.5):
+            self, in_channels, inter_channels, residual=None, stride=(1, 1)):
         super(ResBlock, self).__init__()
         self.expansion = 4
         self.conv1 = nn.Conv2d(
             in_channels, inter_channels, kernel_size=(1, 1), stride=(1, 1), padding=(0, 0))
-        self.drop1 = nn.Dropout2d(p=dropout_prob)
+        #self.drop1 = nn.Dropout2d(p=dropout_prob)
         self.bn1 = nn.BatchNorm2d(inter_channels)
         self.conv2 = nn.Conv2d(inter_channels, inter_channels,
                                kernel_size=(3, 3), stride=stride, padding=(1, 1))
-        self.drop2 = nn.Dropout2d(p=dropout_prob)
+        #self.drop2 = nn.Dropout2d(p=dropout_prob)
         self.bn2 = nn.BatchNorm2d(inter_channels)
         self.conv3 = nn.Conv2d(inter_channels, inter_channels * self.expansion,
                                kernel_size=(1, 1), stride=(1, 1), padding=(0, 0))
-        self.drop3 = nn.Dropout2d(p=dropout_prob)
+        #self.drop3 = nn.Dropout2d(p=dropout_prob)
         self.bn3 = nn.BatchNorm2d(inter_channels * self.expansion)
         self.relu = nn.ReLU()
         self.residual = residual
@@ -28,15 +28,15 @@ class ResBlock(nn.Module):
         identity = x.clone()
 
         x = self.conv1(x)
-        x = self.drop1(x)
+        #x = self.drop1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.drop2(x)
+        #x = self.drop2(x)
         x = self.bn2(x)
         x = self.relu(x)
         x = self.conv3(x)
-        x = self.drop3(x)
+        #x = self.drop3(x)
         x = self.bn3(x)
 
         if self.residual != None:
@@ -50,7 +50,7 @@ class ResBlock(nn.Module):
 class ResNet(nn.Module):
     def __init__(self, Res_block, layers, image_channels, num_classes):
         super(ResNet, self).__init__()
-        self.use_dropout = use_dropout
+        #self.use_dropout = use_dropout
         self.in_channels = 64
         self.conv1 = nn.Conv2d(image_channels, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3))
         self.bn1 = nn.BatchNorm2d(64)
@@ -115,8 +115,8 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
 
-def ResNet50(img_channel=3, num_classes=19, use_dropout=False):
-    return ResNet(ResBlock, [3, 4, 6, 3], img_channel, num_classes, use_dropout)
+def ResNet50(img_channel=3, num_classes=19):
+    return ResNet(ResBlock, [3, 4, 6, 3], img_channel, num_classes)
 
 
 if __name__ == '__main__':
