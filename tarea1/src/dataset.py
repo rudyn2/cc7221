@@ -41,7 +41,7 @@ class ImageDataset(Dataset):
         self.image_keys = list(self.image_paths.keys())
         self.image_classes = list(self.image_paths.values())
 
-        self.use_data_augmentation = use_data_augmentation
+        self.use_data_augmentation = True if augmentation_prob > 0 else False
         self._process = process
         self.process_image_pipeline = transforms.Compose([
             transforms.ToTensor(),

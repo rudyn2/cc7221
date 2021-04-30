@@ -4,6 +4,7 @@ import time
 import torch
 import wandb
 from torch.utils.data import DataLoader, random_split
+import copy
 import os
 
 
@@ -17,6 +18,8 @@ def train_for_classification(net, dataset, optimizer,
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
+    val.dataset = copy.deepcopy(val.dataset)
+    val.dataset.use_data_augmentation = False   # HACK
     train_loader = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=2, pin_memory=True)
     val_loader = DataLoader(val, batch_size=int(batch_size / 8), shuffle=False, num_workers=2, pin_memory=True,
                             drop_last=True)
