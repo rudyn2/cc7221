@@ -32,7 +32,7 @@ if __name__ == '__main__':
         model = ResNet50(img_channel=3, num_classes=19)
         # model = torch.hub.load('pytorch/vision:v0.9.0', 'resnet50', pretrained=False)
     elif args.model == 'resnet_torch':
-        model = torch.hub.load('pytorch/vision:v0.9.0', 'resnet50', pretrained=True)
+        model = torch.hub.load('pytorch/vision:v0.9.0', 'resnet50', pretrained=False)
     elif args.model == 'resnext':
         model = resnext50(img_channel=3, num_classes=19)
     elif args.model == 'alexnet':
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     logging.info("Setting dataset")
     torch.cuda.empty_cache()
-    train_dataset = TrainImageDataset(args.data, 224, 224, use_data_augmentation=False)
+    train_dataset = TrainImageDataset(args.data, 224, 224, use_data_augmentation=True)
     optimizer = torch.optim.Adam(model.parameters(), args.lr)
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     criterion = nn.CrossEntropyLoss()
