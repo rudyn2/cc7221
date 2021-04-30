@@ -32,7 +32,7 @@ class ImageDataset(Dataset):
     MEAN = [0.5457574, 0.49972787, 0.47929478]
     STD = [0.18881057, 0.18312807, 0.18848157]
 
-    def __init__(self, path: str, width: int, height: int, process: bool = True, use_data_augmentation: bool = False):
+    def __init__(self, path: str, width: int, height: int, process: bool = True, augmentation_prob: float = 0.5):
         self.width = width
         self.height = height
         self.path = path
@@ -58,6 +58,7 @@ class ImageDataset(Dataset):
         ]
         self.data_aug = transforms.RandomApply(self.data_aug_operations)
 
+        self.augmentation_prob = augmentation_prob
         self.transform = nn.Sequential(
             K.augmentation.RandomRotation(degrees=[-90, 90]),
             K.augmentation.RandomHorizontalFlip(),
@@ -65,7 +66,6 @@ class ImageDataset(Dataset):
         )
 
         device = torch.device('cuda')
-
 
     def parse_file(self, path: str):
         if not os.path.exists(path):
@@ -129,8 +129,9 @@ class ImageDataset(Dataset):
             arr = self.process_image_pipeline(arr)
         if self.use_data_augmentation:
             # arr2 = self.data_aug(arr)
-            arr = self.transform(arr)
-            arr = arr[0]
+            if random.random() < self.augmentation_prob:
+                arr = self.transform(arr)
+                arr = arr[0]
 
         return arr, int(self.image_classes[index])
 
