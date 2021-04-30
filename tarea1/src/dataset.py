@@ -32,7 +32,7 @@ class ImageDataset(Dataset):
     MEAN = [0.5457574, 0.49972787, 0.47929478]
     STD = [0.18881057, 0.18312807, 0.18848157]
 
-    def __init__(self, path: str, width: int, height: int, use_data_augmentation: bool = False):
+    def __init__(self, path: str, width: int, height: int, process: bool = True, use_data_augmentation: bool = False):
         self.width = width
         self.height = height
         self.path = path
@@ -42,6 +42,7 @@ class ImageDataset(Dataset):
         self.image_classes = list(self.image_paths.values())
 
         self.use_data_augmentation = use_data_augmentation
+        self._process = process
         self.process_image_pipeline = transforms.Compose([
             transforms.ToTensor(),
             transforms.Resize(224),
@@ -58,7 +59,7 @@ class ImageDataset(Dataset):
         self.data_aug = transforms.RandomApply(self.data_aug_operations)
 
         self.transform = nn.Sequential(
-            K.augmentation.RandomRotation(degrees=[-90,90]),
+            K.augmentation.RandomRotation(degrees=[-90, 90]),
             K.augmentation.RandomHorizontalFlip(),
             K.augmentation.RandomVerticalFlip(),
         )
@@ -124,9 +125,10 @@ class ImageDataset(Dataset):
         assert index < len(self), f"Index must be less or equal to {len(self) - 1}"
 
         arr = Image.open(os.path.join(self.path, self.image_keys[index]))
-        arr = self.process_image_pipeline(arr)
+        if self._process:
+            arr = self.process_image_pipeline(arr)
         if self.use_data_augmentation:
-            #arr2 = self.data_aug(arr)
+            # arr2 = self.data_aug(arr)
             arr = self.transform(arr)
             arr = arr[0]
 
@@ -149,8 +151,8 @@ class ImageDataset(Dataset):
 
 class TrainImageDataset(ImageDataset):
 
-    def __init__(self, path: str, width: int, height: int, use_data_augmentation: bool = False):
-        super(TrainImageDataset, self).__init__(path, width, height, use_data_augmentation)
+    def __init__(self, path: str, width: int, height: int, process: bool = True, use_data_augmentation: bool = False):
+        super(TrainImageDataset, self).__init__(path, width, height, process, use_data_augmentation)
 
     def define_dataset_meta(self):
         return "train_sample.txt"
@@ -158,8 +160,8 @@ class TrainImageDataset(ImageDataset):
 
 class TestImageDataset(ImageDataset):
 
-    def __init__(self, path: str, width: int, height: int):
-        super(TestImageDataset, self).__init__(path, width, height)
+    def __init__(self, path: str, width: int, height: int, process: bool = True):
+        super(TestImageDataset, self).__init__(path, width, height, process, use_data_augmentation=False)
 
     def define_dataset_meta(self):
         return "test_sample.txt"
