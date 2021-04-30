@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--epochs', type=int, default=20, help='Number of epochs')
     parser.add_argument('--model', default='resnet', type=str, help='Type of model (resnet, resnext, alexnet)')
-    parser.add_argument('--dropout', action='store_true', help='Wheter to use dropout or not')
+    parser.add_argument('--augmentation-prob', default=0.5, type=float, help='Probability of using data augmentation')
     parser.add_argument('--tag', default='', type=str, help='Optional run tag')
 
     args = parser.parse_args()
