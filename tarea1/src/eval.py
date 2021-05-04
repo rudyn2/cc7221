@@ -3,10 +3,11 @@ from collections import defaultdict
 from typing import Tuple, List
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import numpy as np
+import random
 
 from alexnet import AlexNet
 from dataset import TestImageDataset
@@ -139,6 +140,9 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', default=8, type=int, help='Batch size used to evaluate model')
 
     args = parser.parse_args()
+    torch.random.manual_seed(42)
+    np.random.seed(42)
+    random.seed(42)
 
     models = []
     if not args.models.__contains__(','):
@@ -154,8 +158,10 @@ if __name__ == '__main__':
         models[0].to(args.device)
         models[0].eval()
     else:
+        print("Multiple models...")
         weight_paths = args.weights.split(",")
         for i, weight_path in enumerate(weight_paths):
+            print(f"Loading {weight_path}")
             models[i].load_state_dict(torch.load(weight_path))
             models[i].to(args.device)
             models[i].eval()

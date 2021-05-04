@@ -152,8 +152,8 @@ class ImageDataset(Dataset):
 
 class TrainImageDataset(ImageDataset):
 
-    def __init__(self, path: str, width: int, height: int, process: bool = True, use_data_augmentation: bool = False):
-        super(TrainImageDataset, self).__init__(path, width, height, process, use_data_augmentation)
+    def __init__(self, path: str, width: int, height: int, process: bool = True, data_augmentation_prob: float = 0.5):
+        super(TrainImageDataset, self).__init__(path, width, height, process, augmentation_prob=data_augmentation_prob)
 
     def define_dataset_meta(self):
         return "train_sample.txt"
@@ -162,7 +162,7 @@ class TrainImageDataset(ImageDataset):
 class TestImageDataset(ImageDataset):
 
     def __init__(self, path: str, width: int, height: int, process: bool = True):
-        super(TestImageDataset, self).__init__(path, width, height, process, use_data_augmentation=False)
+        super(TestImageDataset, self).__init__(path, width, height, process)
 
     def define_dataset_meta(self):
         return "test_sample.txt"
