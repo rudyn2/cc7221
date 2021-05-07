@@ -50,6 +50,12 @@ class ImageDataset(Dataset):
             RotationTransform(90),
             transforms.Normalize(self.MEAN, self.STD),
         ])
+        self.process_image_vis = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Resize(224),
+            transforms.CenterCrop((224, 224)),
+            RotationTransform(90),
+        ])
         self.data_aug_operations = [
             transforms.RandomRotation(degrees=[-90, 90]),
             transforms.RandomHorizontalFlip(),
@@ -125,8 +131,11 @@ class ImageDataset(Dataset):
         assert index < len(self), f"Index must be less or equal to {len(self) - 1}"
 
         arr = Image.open(os.path.join(self.path, self.image_keys[index]))
+        #arr = np.array(arr)
         if self._process:
             arr = self.process_image_pipeline(arr)
+        elif self._process == False:
+            arr = self.process_image_vis(arr)
         if self.use_data_augmentation:
             # arr2 = self.data_aug(arr)
             if random.random() < self.augmentation_prob:
@@ -158,6 +167,13 @@ class TrainImageDataset(ImageDataset):
     def define_dataset_meta(self):
         return "train_sample.txt"
 
+class VisualDataset(ImageDataset):
+
+    def __init__(self, path: str, width: int, height: int, process: bool = True):
+        super(VisualDataset, self).__init__(path, width, height, process, use_data_augmentation=False)
+
+    def define_dataset_meta(self):
+        return "test_sample.txt"
 
 class TestImageDataset(ImageDataset):
 
