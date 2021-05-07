@@ -28,4 +28,19 @@ def crossentropy_triplet_loss(y_true_a, y_true_p, y_true_n, y_pred_a, y_pred_p, 
     loss = (ce_a + ce_p + ce_n) / 3.0
     return loss
 
-#def contrastive_loss():
+def contrastive_loss(margin = 20):
+    def loss(out1, out2, target):
+        dist = torch.sqrt(torch.sum(torch.square(out1 - out2), 2))
+        dist_hard = torch.mean(dist)
+        #hardest negative and hardest positive
+        _, maxim = torch.max(1e-10, margin - dist_hard)
+        return target*torch.square(dist_hard) + (1-target)*torch.square(maxim)
+    return loss
+
+def crossentropy_contrastive_loss(y_true1, y_true2, y_pred1, y_pred2):
+    ce = nn.CrossEntropyLoss()
+    ce1 = ce(torch.squeeze(y_true1), torch.squeeze(y_pred1))
+    ce2 = ce(torch.squeeze(y_true2), torch.squeeze(y_pred2))
+    loss = (ce1 + ce2) / 2.0
+    return loss
+
