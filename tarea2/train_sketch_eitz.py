@@ -6,7 +6,7 @@ sys.path.append('..')
 from tarea2.dataset import SketchTrainDataset
 import argparse
 import wandb
-from model_sketchz import ResNet34
+from models import ResNet34
 
 if __name__ == '__main__':
     from torch.utils.data import DataLoader, random_split
