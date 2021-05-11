@@ -52,6 +52,7 @@ class SketchDataset(ABC, Dataset):
         for img_path, class_number in self._images.items():
             group_label = self._class_mapping[class_number]
             groups[group_label].append(join(self._path, img_path))
+        print(f"[SKETCHES] {len(groups)} classes with a total of {sum([len(g) for g in groups.values()])} samples")
         return groups
 
     @abstractmethod
@@ -139,6 +140,16 @@ class RotationTransform:
         return TF.rotate(x, self.angle)
 
 
+class ToRGB:
+    def __init__(self):
+        pass
+
+    def __call__(self, x):
+        if x.shape[0] == 1:
+            return x.repeat(3, 1, 1)
+        return x
+
+
 class FlickrDataset(Dataset):
     def __init__(self, path: str):
         super(FlickrDataset, self).__init__()
@@ -155,6 +166,7 @@ class FlickrDataset(Dataset):
             transforms.Resize(256),
             transforms.CenterCrop(224),
             RotationTransform(90),
+            ToRGB(),
             # transforms.Normalize(self.mean, self.std),
         ])
 
@@ -163,7 +175,7 @@ class FlickrDataset(Dataset):
         for img_path, class_number in self._images.items():
             group_label = self._class_mapping[class_number]
             groups[group_label].append(join(self._path, img_path))
-        print(f"{len(groups)} classes with a total of {sum([len(g) for g in groups.values()])} samples")
+        print(f"[FLICKR] {len(groups)} classes with a total of {sum([len(g) for g in groups.values()])} samples")
         return groups
 
     def read(self):
@@ -213,27 +225,36 @@ class ContrastiveDataset(Dataset):
         super(ContrastiveDataset, self).__init__()
         self._flickr = flickr_dataset
         self._sketches = sketches_dataset
-        self._pairs, self._pairs_labels = self._create_pairs()
+        self._pairs = self._create_pairs()
 
     def _create_pairs(self):
-        pairs, pairs_labels = [], []
+
+        pairs = []  # (first, second, similarity (1 or 0))
         for first_img_path, class_number in self._flickr.images.items():
             flickr_class_label = self._flickr.class_mapping[class_number]
+
+            # get N similar to first image
             for second_img_path in self._sketches.class_groups[flickr_class_label]:
                 second_img_label = self._sketches.class_mapping_inverted[flickr_class_label]
-                pairs.append((first_img_path, second_img_path))
-                pairs_labels.append((class_number, second_img_label))
-        return pairs, pairs_labels
+                pairs.append((first_img_path, second_img_path, class_number, second_img_label, 1))
+
+            # different M different to first image
+            different_groups = [g for g in self._sketches.class_groups.keys() if g != flickr_class_label]
+            different_group = random.sample(different_groups, 1)[0]
+            for second_img_path in self._sketches.class_groups[different_group]:
+                second_img_label = self._sketches.class_mapping_inverted[flickr_class_label]
+                pairs.append((first_img_path, second_img_path, class_number, second_img_label, 0))
+
+        return pairs
 
     def __getitem__(self, item):
         # we took an image from flickr dataset and then we uniformly sample an sketch from sketches dataset
-        img_flickr_path, img_sketches_path = self._pairs[item]    # (flickr, sketch)
+        img_flickr_path, img_sketches_path, img_flickr_label, img_sketches_label, target = self._pairs[item]    # (flickr, sketch, similarity)
         img_flickr, img_sketches = Image.open(img_flickr_path), Image.open(img_sketches_path)
-        img_flickr_label, img_sketches_labels = self._pairs_labels[item]
 
         img_flickr = self._flickr.process_image_pipeline(img_flickr)
         img_sketches = self._sketches.process_image_pipeline(img_sketches)
-        return img_flickr, img_sketches, img_flickr_label, img_sketches_labels
+        return img_flickr, img_sketches, img_flickr_label, img_sketches_label, target
 
     def __len__(self):
         return len(self._pairs)
@@ -301,7 +322,7 @@ if __name__ == '__main__':
     train_contrastive = ContrastiveDataset(train_flickr_dataset, train_sketches_dataset)
     d = train_contrastive[0]
     train_contrastive_loader = DataLoader(train_contrastive, batch_size=8)
-    for flickr_images, sketches_images, flickr_labels, sketches_labels in train_contrastive_loader:
+    for flickr_images, sketches_images, similarity in train_contrastive_loader:
         print(flickr_images.shape)
         break
 

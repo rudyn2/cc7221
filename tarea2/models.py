@@ -45,7 +45,7 @@ class SiameseNetwork(nn.Module):
 
     def forward(self, x, include_negative: bool = True):
         anchor, positive, negative = x
-        anchor_logits, anchor_feats = self._sketches_backbone.forward_extended(anchor)
+        anchor_logits, anchor_feats = self._sketches_backbone.forward_extended(anchor)  #
         positive_logits, positive_feats = self._imagenet_backbone.forward_extended(positive)
 
         if include_negative:
