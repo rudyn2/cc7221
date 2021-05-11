@@ -28,6 +28,7 @@ class SketchDataset(ABC, Dataset):
         self._images = self._read(os.path.join(self._path, self.get_txt_name()))  # image_path -> class
         self._images_paths = list(self._images.keys())  # image_path
         self._class_mapping_inverted = self._read(join(self._path, "mapping.txt"))  # class label -> class number
+        self._class_mapping_inverted = self._patch(self._class_mapping_inverted)
         self._class_mapping = {v: k for k, v in self._class_mapping_inverted.items()}   # class number -> class label
         self._class_groups = self._build_groups()  # class label -> list with group of image paths
 
@@ -39,10 +40,18 @@ class SketchDataset(ABC, Dataset):
             # transforms.Normalize(self.mean, self.std),
         ])
 
+    @staticmethod
+    def _patch(input_dict: dict) -> dict:
+        old, new = input_dict, {}
+        for k, v in old.items():
+            new[str(k).replace('-', '_')] = v
+        return new
+
     def _build_groups(self):
         groups = defaultdict(list)
         for img_path, class_number in self._images.items():
-            groups[self._class_mapping[class_number]].append(join(self._path, img_path))
+            group_label = self._class_mapping[class_number]
+            groups[group_label].append(join(self._path, img_path))
         return groups
 
     @abstractmethod
@@ -97,6 +106,10 @@ class SketchDataset(ABC, Dataset):
     def path(self):
         return self._path
 
+    @property
+    def class_mapping_inverted(self):
+        return self._class_mapping_inverted
+
 
 class SketchTrainDataset(SketchDataset):
 
@@ -131,9 +144,9 @@ class FlickrDataset(Dataset):
         super(FlickrDataset, self).__init__()
         self._path = path
         self._class_mapping = {}            # class number -> class label
-
         self._images = {}
         self.read()
+        self._class_mapping_inverted = {v: k for k, v in self._class_mapping.items()}   # class label -> class number
 
         self._class_groups = self._build_groups()
         self._images_path = list(self._images.keys())
@@ -148,14 +161,15 @@ class FlickrDataset(Dataset):
     def _build_groups(self):
         groups = defaultdict(list)
         for img_path, class_number in self._images.items():
-            groups[self._class_mapping[class_number]].append(join(self._path, img_path))
+            group_label = self._class_mapping[class_number]
+            groups[group_label].append(join(self._path, img_path))
         print(f"{len(groups)} classes with a total of {sum([len(g) for g in groups.values()])} samples")
         return groups
 
     def read(self):
         folders = [f for f in listdir(self._path) if isdir(join(self._path, f))]
         for i, folder in enumerate(folders):
-            self._class_mapping[i] = folder
+            self._class_mapping[i] = folder.replace('-', '_')
             for image in listdir(join(self._path, folder)):
                 full_path = join(self._path, folder, image)
                 self._images[full_path] = i
@@ -170,13 +184,13 @@ class FlickrDataset(Dataset):
     def __len__(self) -> int:
         return len(self._images_path)
 
-    def get_random_from_class(self, class_label: str) -> str:
-        print(len(self._class_groups))
+    def get_random_from_class(self, class_label: str) -> Tuple[str, int]:
         class_group = self._class_groups[class_label]
+        label = self._class_mapping_inverted[class_label]
         sample = random.sample(class_group, 1)[0]
-        return sample
+        return sample, label
 
-    def get_random_from_non_class(self, class_label: str) -> str:
+    def get_random_from_non_class(self, class_label: str) -> Tuple[str, int]:
         negative_groups = [gk for gk in self._class_groups.keys() if gk != class_label]
         negative_class = random.sample(negative_groups, 1)[0]
         return self.get_random_from_class(negative_class)
@@ -189,29 +203,37 @@ class FlickrDataset(Dataset):
     def images(self):
         return self._images
 
+    @property
+    def class_mapping_inverted(self):
+        return self._class_mapping_inverted
+
 
 class ContrastiveDataset(Dataset):
     def __init__(self, flickr_dataset: FlickrDataset, sketches_dataset: SketchDataset):
         super(ContrastiveDataset, self).__init__()
         self._flickr = flickr_dataset
         self._sketches = sketches_dataset
-        self._pairs = self._create_pairs()
+        self._pairs, self._pairs_labels = self._create_pairs()
 
     def _create_pairs(self):
-        pairs = []
-        for img_path, class_number in self._flickr.images.items():
+        pairs, pairs_labels = [], []
+        for first_img_path, class_number in self._flickr.images.items():
             flickr_class_label = self._flickr.class_mapping[class_number]
             for second_img_path in self._sketches.class_groups[flickr_class_label]:
-                pairs.append((img_path, second_img_path))
-        return pairs
+                second_img_label = self._sketches.class_mapping_inverted[flickr_class_label]
+                pairs.append((first_img_path, second_img_path))
+                pairs_labels.append((class_number, second_img_label))
+        return pairs, pairs_labels
 
     def __getitem__(self, item):
         # we took an image from flickr dataset and then we uniformly sample an sketch from sketches dataset
         img_flickr_path, img_sketches_path = self._pairs[item]    # (flickr, sketch)
         img_flickr, img_sketches = Image.open(img_flickr_path), Image.open(img_sketches_path)
+        img_flickr_label, img_sketches_labels = self._pairs_labels[item]
+
         img_flickr = self._flickr.process_image_pipeline(img_flickr)
         img_sketches = self._sketches.process_image_pipeline(img_sketches)
-        return img_flickr, img_sketches
+        return img_flickr, img_sketches, img_flickr_label, img_sketches_labels
 
     def __len__(self):
         return len(self._pairs)
@@ -222,35 +244,42 @@ class TripletDataset(Dataset):
         super(TripletDataset, self).__init__()
         self._flickr = flickr_dataset
         self._sketches = sketches_dataset
-        self._pairs = self._create_triplets()
+        self._triplets, self._triplets_labels = self._create_triplets()
 
     def _create_triplets(self):
         triplets = []
-        for anchor_path, class_number in tqdm(self._sketches.images.items(), "Creating triplet dataset"):
+        triplets_labels = []
+        for group_label, group_members in self._sketches.class_groups.items():
             # get an anchor
-            anchor_path = join(self._sketches.path, anchor_path)
-            anchor_class_label = self._sketches.class_mapping[class_number]
-            positive_path = self._flickr.get_random_from_class(anchor_class_label)
-            negative_path = self._flickr.get_random_from_non_class(anchor_class_label)
-            triplets.append((anchor_path, positive_path, negative_path))
+            anchor_label = self._sketches.class_mapping_inverted[group_label]
+            for group_member in group_members:
+                anchor_path = group_member
+                positive_path, positive_label = self._flickr.get_random_from_class(group_label)
+                negative_path, negative_label = self._flickr.get_random_from_non_class(group_label)
 
-            # # for each positive sample
-            # for positive_path in self._flickr._class_groups[anchor_class_label]:
-            #     # this is an expensive iteration
-            #     negative_groups = [gk for gk in self._flickr._class_groups.keys() if gk != anchor_class_label]
-            #     negative_groups = random.sample(negative_groups, 1)
-            #     for negative_group in negative_groups:
-            #         negative_samples = random.sample(self._flickr._class_groups[negative_group], 3)
-            #         for negative_path in negative_samples:
-            #             triplets.append((anchor_path, positive_path, negative_path))
-
-        return triplets
+                triplets.append((anchor_path, positive_path, negative_path))
+                triplets_labels.append((anchor_label, positive_label, negative_label))
+        print(f"{len(triplets)} triplets have been created")
+        return triplets, triplets_labels
 
     def __getitem__(self, item):
-        pass
+        anchor_sketch_path, positive_flickr_path, negative_flickr_path = self._triplets[item]
+        anchor_label, positive_label, negative_label = self._triplets_labels[item]
+
+        # read images
+        anchor = Image.open(anchor_sketch_path)
+        positive = Image.open(positive_flickr_path)
+        negative = Image.open(negative_flickr_path)
+
+        # process them
+        anchor = self._sketches.process_image_pipeline(anchor)
+        positive = self._flickr.process_image_pipeline(positive)
+        negative = self._flickr.process_image_pipeline(negative)
+
+        return anchor, positive, negative, anchor_label, positive_label, negative_label
 
     def __len__(self):
-        pass
+        return len(self._triplets)
 
 
 if __name__ == '__main__':
@@ -268,13 +297,18 @@ if __name__ == '__main__':
         print(images.shape)
         break
 
-    # train_contrastive = ContrastiveDataset(train_flickr_dataset, train_sketches_dataset)
-    # d = train_contrastive[0]
-    # train_contrastive_loader = DataLoader(train_contrastive, batch_size=8)
-    # for images, labels in train_contrastive_loader:
-    #     print(images.shape)
-    #     break
+    print("\nCreating contrastive dataset")
+    train_contrastive = ContrastiveDataset(train_flickr_dataset, train_sketches_dataset)
+    d = train_contrastive[0]
+    train_contrastive_loader = DataLoader(train_contrastive, batch_size=8)
+    for flickr_images, sketches_images, flickr_labels, sketches_labels in train_contrastive_loader:
+        print(flickr_images.shape)
+        break
 
-    print("Creating triplet dataset ...")
+    print("\nCreating triplet dataset ...")
     train_triplet = TripletDataset(train_flickr_dataset, train_sketches_dataset)
     d = train_triplet[0]
+    train_triplet_loader = DataLoader(train_triplet, batch_size=8)
+    for anchors, _, _, _, _, _ in train_triplet_loader:
+        print(anchors.shape)
+        break
