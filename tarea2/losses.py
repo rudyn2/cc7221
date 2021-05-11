@@ -3,19 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def triplet_loss(margin=20):
-    def loss(e_a, e_p, e_n):
-        d_p = torch.sqrt(torch.sum(torch.square(e_a - e_p), 2))
-        d_p_hard = torch.mean(d_p)
-        d_n = torch.sqrt(torch.sum(torch.square(e_a - e_n), 2))
-        d_n_hard = torch.mean(d_n)
-        # hardest negative and hardest positive
-        _, max = torch.max(1e-10, d_p_hard + margin - d_n_hard)
-        return max
-
-    return loss
-
-
 def crossentropy_loss(y_true, y_pred):
     """
     This is the classical categorical crossentropy
@@ -23,6 +10,15 @@ def crossentropy_loss(y_true, y_pred):
     ce = nn.CrossEntropyLoss()
     out = ce(y_true, y_pred)
     return out
+
+
+def triplet_loss(margin=20):
+    def loss(e_a, e_p, e_n):
+        dp = F.pairwise_distance(e_a, e_p, p=2)
+        dn = F.pairwise_distance(e_a, e_n, p=2)
+        max_ = F.relu(dp - dn + margin)
+        return torch.mean(max_)
+    return loss
 
 
 def crossentropy_triplet_loss(y_true_a, y_true_p, y_true_n, y_pred_a, y_pred_p, y_pred_n):
@@ -41,7 +37,7 @@ def contrastive_loss(margin=1.4):
         # hardest negative and hardest positive
         max_ = F.relu(margin - dist)
         max_squared = torch.square(max_)
-        pairwise_contrastive_losses = target * dist + (1 - target) * max_squared
+        pairwise_contrastive_losses = target * torch.square(dist) + (1 - target) * max_squared  # faltaria square en dist
         return torch.mean(pairwise_contrastive_losses)
 
     return loss
