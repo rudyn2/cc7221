@@ -3,7 +3,7 @@ import sys
 sys.path.append('.')
 sys.path.append('..')
 
-from tarea2.datasets import ContrastiveDataset, SketchTrainDataset, FlickrDataset
+from datasets import ContrastiveDataset, SketchTrainDataset, FlickrDataset
 import argparse
 import wandb
 from models import ResNet34, SiameseNetwork

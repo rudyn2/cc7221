@@ -3,11 +3,11 @@ import sys
 sys.path.append('.')
 sys.path.append('..')
 
-from tarea2.datasets import ContrastiveDataset, SketchTrainDataset, FlickrDataset, TripletDataset
+from datasets import SketchTrainDataset, FlickrDataset, TripletDataset
 import argparse
 import wandb
 from models import ResNet34, SiameseNetwork
-from losses import contrastive_loss, triplet_loss
+from losses import triplet_loss
 
 if __name__ == '__main__':
     from torch.utils.data import DataLoader, random_split
