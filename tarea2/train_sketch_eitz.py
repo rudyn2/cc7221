@@ -48,7 +48,7 @@ if __name__ == '__main__':
     print("[*] Initializing weights...")
     imagenet_net = ResNet34()
     sketches_net = ResNet34()
-    sketches_net.load_state_dict(torch.load('/home/rudy/Documents/cc7221/tarea2/weights/sketches.pth'))
+    sketches_net.load_state_dict(torch.load(args.sketches_backbone_weights))
     print("[+] Weights loaded")
 
     print("[*] Adapting output layers...")
