@@ -174,7 +174,7 @@ class FlickrDataset(Dataset):
         groups = defaultdict(list)
         for img_path, class_number in self._images.items():
             group_label = self._class_mapping[class_number]
-            groups[group_label].append(join(self._path, img_path))
+            groups[group_label].append(img_path)
         print(f"[FLICKR] {len(groups)} classes with a total of {sum([len(g) for g in groups.values()])} samples")
         return groups
 
