@@ -41,20 +41,46 @@ def metric_accuracy_siamese(y_true_a, y_true_p, y_true_n, cl_a, cl_p, cl_n):
 
 
 def mean_average_precision(y_pred_ranks, y_true):  # o dataset
-    # caso1
-
-    # caso2
+    #caso1 ranking contiene la clase de la imagen al igual q true
     contf = 0
     for i in range(len(y_true)):
         cont = 0
+        cont2 = 0
+        ap = 0
         for j in range(len(y_pred_ranks[i])):
             if y_true[i] == y_pred_ranks[i][j]:
-                cont += 1
-        contf += cont / len(y_pred_ranks[i])
+                cont += (1 + cont2 )/ (j+1)
+                cont2 += 1
+        contf += cont/len(y_pred_ranks[i])
 
     map = contf / len(y_true)
     return map
 
+def aux(y_pred_ranks, y_true):  # o dataset
+    # caso1 ranking contiene la clase de la imagen al igual q true
+    contf = 0
+    cont2 = 0
+    for i in range(len(y_pred_ranks)):
+        if y_true == y_pred_ranks[i]:
+            contf += (1 +cont2) / (i+1)
+            #print(contf)
+            cont2 += 1
+    return contf/len(y_pred_ranks)
+
+
+
+    #caso 2 ranking tiene el indice de la imagen
+    #contf = 0
+    #for i in range(len(y_pred_ranks)):
+     #   cont = 0
+      #  ap = 0
+       # for j in range(len(y_pred_ranks[i])):
+        #    if y_true[i] == y_pred_ranks[i][j]:
+        #        cont += 1 / j
+        #contf += cont / len(y_pred_ranks[i])
+
+    #map = contf / len(y_true)
+    #return map
 
 def recall(ranks, y_true):
     contf = 0
