@@ -36,11 +36,11 @@ if __name__ == '__main__':
     train_sketches = SketchTrainDataset(args.sketches)
     dataset = ContrastiveDataset(flickr_dataset=train_flickr, sketches_dataset=train_sketches)
 
-    n_val = int(len(dataset) * 0.1)
+    n_val = int(len(dataset) * args.val_size)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
     train_loader = DataLoader(train, batch_size=args.batch_size)
-    val_loader = DataLoader(val, batch_size=args.batch_size)
+    val_loader = DataLoader(val, batch_size=args.batch_size // 4)
 
     # load backbones
     print("[*] Initializing weights...")
@@ -122,6 +122,8 @@ if __name__ == '__main__':
             if not args.debug:
                 wandb.log({'train/loss': avg_train_loss, 'train/acc flickr': avg_flickr_train_acc,
                            'train/acc sketches': avg_sketches_train_acc})
+
+        train_loader.dataset.dataset.on_epoch_end()
 
         avg_train_loss = train_total_loss / len(train_loader)
 

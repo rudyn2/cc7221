@@ -241,7 +241,7 @@ class ContrastiveDataset(Dataset):
             # different M different to first image
             different_groups = [g for g in self._sketches.class_groups.keys() if g != flickr_class_label]
             different_group = random.sample(different_groups, 1)[0]
-            for second_img_path in self._sketches.class_groups[different_group]:
+            for second_img_path in random.sample(self._sketches.class_groups[different_group], 5):
                 second_img_label = self._sketches.class_mapping_inverted[flickr_class_label]
                 pairs.append((first_img_path, second_img_path, class_number, second_img_label, 0))
 
@@ -258,6 +258,10 @@ class ContrastiveDataset(Dataset):
 
     def __len__(self):
         return len(self._pairs)
+
+    def on_epoch_end(self):
+        print("\nRefreshing dataset")
+        self._pairs = self._create_pairs()
 
 
 class TripletDataset(Dataset):
@@ -302,6 +306,10 @@ class TripletDataset(Dataset):
     def __len__(self):
         return len(self._triplets)
 
+    def on_epoch_end(self):
+        print("\nRefreshing dataset")
+        self._triplets, self._triplets_labels = self._create_triplets()
+
 
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
@@ -322,7 +330,7 @@ if __name__ == '__main__':
     train_contrastive = ContrastiveDataset(train_flickr_dataset, train_sketches_dataset)
     d = train_contrastive[0]
     train_contrastive_loader = DataLoader(train_contrastive, batch_size=8)
-    for flickr_images, sketches_images, similarity in train_contrastive_loader:
+    for flickr_images, _, _, _, _ in train_contrastive_loader:
         print(flickr_images.shape)
         break
 
