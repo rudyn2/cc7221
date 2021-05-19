@@ -234,14 +234,14 @@ class ContrastiveDataset(Dataset):
             flickr_class_label = self._flickr.class_mapping[class_number]
 
             # get N similar to first image
-            for second_img_path in self._sketches.class_groups[flickr_class_label]:
+            for second_img_path in random.sample(self._sketches.class_groups[flickr_class_label], 10):
                 second_img_label = self._sketches.class_mapping_inverted[flickr_class_label]
                 pairs.append((first_img_path, second_img_path, class_number, second_img_label, 1))
 
             # different M different to first image
             different_groups = [g for g in self._sketches.class_groups.keys() if g != flickr_class_label]
             different_group = random.sample(different_groups, 1)[0]
-            for second_img_path in random.sample(self._sketches.class_groups[different_group], 5):
+            for second_img_path in random.sample(self._sketches.class_groups[different_group], 10):
                 second_img_label = self._sketches.class_mapping_inverted[flickr_class_label]
                 pairs.append((first_img_path, second_img_path, class_number, second_img_label, 0))
 

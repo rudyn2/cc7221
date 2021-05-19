@@ -22,7 +22,7 @@ if __name__ == '__main__':
                         help='Path to sketches dataset folder')
     parser.add_argument('--sketches-backbone-weights', default='../weights/sketches.pth',
                         help='Path to sketches weights')
-    parser.add_argument('--batch-size', default=32, type=int, help='Batch size')
+    parser.add_argument('--batch-size', default=64, type=int, help='Batch size')
     parser.add_argument('--epochs', default=20, type=int, help='Epochs')
     parser.add_argument('--val-size', default=0.1, type=float,
                         help='Ratio of train dataset that will be used for validation')
