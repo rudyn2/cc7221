@@ -31,6 +31,7 @@ if __name__ == '__main__':
     parser.add_argument('--m-different', default=3, type=int,
                         help='Number of different flickr-sketch pairs to be created'
                              'per sketch')
+    parser.add_argument('--optimizer', default='SGD', type=str, help='Type of optimizer [adam, sgd]')
     parser.add_argument('--lr', default=0.001, type=float, help='Initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, help='SGD Optimizer momentum')
     parser.add_argument('--t-0', default=8000, type=int, help='Cosine Decay number of iterations to restart.')
@@ -65,7 +66,10 @@ if __name__ == '__main__':
     print("[*] Initializing model, loss and optimizer")
     contrastive_net = SiameseNetwork(sketches_net, imagenet_net)
     contrastive_net.to(args.device)
-    optimizer = torch.optim.SGD(contrastive_net.parameters(), lr=args.lr, momentum=args.momentum)
+    if args.optimizer == 'sgd':
+        optimizer = torch.optim.SGD(contrastive_net.parameters(), lr=args.lr, momentum=args.momentum)
+    else:
+        optimizer = torch.optim.Adam(contrastive_net.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=args.t_0)
     contrastive_loss = contrastive_loss()
     cross_entropy_loss = torch.nn.CrossEntropyLoss()
@@ -79,6 +83,9 @@ if __name__ == '__main__':
         config.batch_size = args.batch_size
         config.epochs = args.epochs
         config.learning_rate = args.lr
+        config.optimizer = optimizer.__class__.__name__
+        config.train_size = n_train
+        config.val_size = n_val
 
     print("[*] Training")
     best_avg_acc = 0
