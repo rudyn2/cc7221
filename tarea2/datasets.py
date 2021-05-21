@@ -221,8 +221,10 @@ class FlickrDataset(Dataset):
 
 
 class ContrastiveDataset(Dataset):
-    def __init__(self, flickr_dataset: FlickrDataset, sketches_dataset: SketchDataset):
+    def __init__(self, flickr_dataset: FlickrDataset, sketches_dataset: SketchDataset, n_similar: int, m_different: int):
         super(ContrastiveDataset, self).__init__()
+        self._n_similar = n_similar
+        self._m_different = m_different
         self._flickr = flickr_dataset
         self._sketches = sketches_dataset
         self._pairs = self._create_pairs()
@@ -234,22 +236,24 @@ class ContrastiveDataset(Dataset):
             flickr_class_label = self._flickr.class_mapping[class_number]
 
             # get N similar to first image
-            for second_img_path in random.sample(self._sketches.class_groups[flickr_class_label], 10):
+            for second_img_path in random.sample(self._sketches.class_groups[flickr_class_label], self._n_similar):
                 second_img_label = self._sketches.class_mapping_inverted[flickr_class_label]
                 pairs.append((first_img_path, second_img_path, class_number, second_img_label, 1))
 
             # different M different to first image
             different_groups = [g for g in self._sketches.class_groups.keys() if g != flickr_class_label]
             different_group = random.sample(different_groups, 1)[0]
-            for second_img_path in random.sample(self._sketches.class_groups[different_group], 10):
+            for second_img_path in random.sample(self._sketches.class_groups[different_group], self._m_different):
                 second_img_label = self._sketches.class_mapping_inverted[flickr_class_label]
                 pairs.append((first_img_path, second_img_path, class_number, second_img_label, 0))
 
+        print(f"Contrastive dataset has been created with a total of {len(pairs)} pairs")
         return pairs
 
     def __getitem__(self, item):
         # we took an image from flickr dataset and then we uniformly sample an sketch from sketches dataset
-        img_flickr_path, img_sketches_path, img_flickr_label, img_sketches_label, target = self._pairs[item]    # (flickr, sketch, similarity)
+        # (flickr, sketch, similarity)
+        img_flickr_path, img_sketches_path, img_flickr_label, img_sketches_label, target = self._pairs[item]
         img_flickr, img_sketches = Image.open(img_flickr_path), Image.open(img_sketches_path)
 
         img_flickr = self._flickr.process_image_pipeline(img_flickr)

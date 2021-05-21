@@ -26,7 +26,14 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', default=20, type=int, help='Epochs')
     parser.add_argument('--val-size', default=0.1, type=float,
                         help='Ratio of train dataset that will be used for validation')
-    parser.add_argument('--lr', default=0.0001, type=float, help='Learning rate')
+    parser.add_argument('--n-similar', default=3, type=int, help='Number of similar flickr-sketch pairs to be created'
+                                                                 'per sketch')
+    parser.add_argument('--m-different', default=3, type=int,
+                        help='Number of different flickr-sketch pairs to be created'
+                             'per sketch')
+    parser.add_argument('--lr', default=0.001, type=float, help='Initial learning rate')
+    parser.add_argument('--momentum', default=0.9, type=float, help='SGD Optimizer momentum')
+    parser.add_argument('--t-0', default=8000, type=int, help='Cosine Decay number of iterations to restart.')
     parser.add_argument('--device', default='cuda', type=str, help='device')
     parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
@@ -34,7 +41,8 @@ if __name__ == '__main__':
     device = args.device
     train_flickr = FlickrDataset(args.flickr)
     train_sketches = SketchTrainDataset(args.sketches)
-    dataset = ContrastiveDataset(flickr_dataset=train_flickr, sketches_dataset=train_sketches)
+    dataset = ContrastiveDataset(flickr_dataset=train_flickr, sketches_dataset=train_sketches,
+                                 n_similar=args.n_similar, m_different=args.m_different)
 
     n_val = int(len(dataset) * args.val_size)
     n_train = len(dataset) - n_val
@@ -57,7 +65,8 @@ if __name__ == '__main__':
     print("[*] Initializing model, loss and optimizer")
     contrastive_net = SiameseNetwork(sketches_net, imagenet_net)
     contrastive_net.to(args.device)
-    optimizer = torch.optim.Adam(contrastive_net.parameters(), lr=args.lr)
+    optimizer = torch.optim.SGD(contrastive_net.parameters(), lr=args.lr, momentum=args.momentum)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=args.t_0)
     contrastive_loss = contrastive_loss()
     cross_entropy_loss = torch.nn.CrossEntropyLoss()
     print("[+] Model, loss and optimizer were initialized successfully")
@@ -124,7 +133,6 @@ if __name__ == '__main__':
                            'train/acc sketches': avg_sketches_train_acc})
 
         train_loader.dataset.dataset.on_epoch_end()
-
         avg_train_loss = train_total_loss / len(train_loader)
 
         if not args.debug:
