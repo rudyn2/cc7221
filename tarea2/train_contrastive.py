@@ -130,6 +130,7 @@ if __name__ == '__main__':
             running_acc_sketches += torch.sum(max_idx == second_label).item()
             avg_sketches_train_acc = running_acc_sketches / items * 100
 
+            scheduler.step()
             sys.stdout.write('\r')
             sys.stdout.write(f"Epoch: {epoch + 1}({i}/{len(train_loader)})| "
                              f"Train[Loss: {avg_train_loss:.5f}, "
