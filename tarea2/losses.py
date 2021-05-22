@@ -37,7 +37,7 @@ def contrastive_loss(margin=1.4):
         # hardest negative and hardest positive
         max_ = F.relu(margin - dist)
         max_squared = torch.square(max_)
-        pairwise_contrastive_losses = target * torch.square(dist) + (1 - target) * max_squared  # faltaria square en dist
+        pairwise_contrastive_losses = target * torch.square(dist) + (1 - target) * max_squared
         return torch.mean(pairwise_contrastive_losses)
 
     return loss

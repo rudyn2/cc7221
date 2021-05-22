@@ -8,7 +8,7 @@ from typing import Tuple
 
 import numpy as np
 import torch
-from tarea2.utils import ToRGB, RotationTransform
+from utils import ToRGB, RotationTransform
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms

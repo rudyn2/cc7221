@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--flickr', default='data/Flickr25K', type=str, help='Path to flickr dataset folder')
     parser.add_argument('--sketches', default='data/Sketch_EITZ', type=str,
                         help='Path to sketches dataset folder')
-    parser.add_argument('--sketches-backbone-weights', default='../weights/sketches.pth',
+    parser.add_argument('--sketches-backbone-weights', default='weights/sketches.pth',
                         help='Path to sketches weights')
     parser.add_argument('--batch-size', default=64, type=int, help='Batch size')
     parser.add_argument('--epochs', default=20, type=int, help='Epochs')
