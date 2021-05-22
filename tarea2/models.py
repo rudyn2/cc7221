@@ -43,9 +43,17 @@ class SiameseNetwork(nn.Module):
         self._sketches_backbone = sketches_backbone
         self._imagenet_backbone = imagenet_backbone
 
+    def extract_features_image(self, image_batch):
+        _, feats = self._imagenet_backbone.forward_extended(image_batch)
+        return feats
+
+    def extract_features_sketch(self, image_batch):
+        _, feats = self._sketches_backbone.forward_extended(image_batch)
+        return feats
+
     def forward(self, x, include_negative: bool = True):
         anchor, positive, negative = x
-        anchor_logits, anchor_feats = self._sketches_backbone.forward_extended(anchor)  #
+        anchor_logits, anchor_feats = self._sketches_backbone.forward_extended(anchor)
         positive_logits, positive_feats = self._imagenet_backbone.forward_extended(positive)
 
         if include_negative:

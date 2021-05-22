@@ -8,12 +8,13 @@ from typing import Tuple
 
 import numpy as np
 import torch
-import torchvision.transforms.functional as TF
+from utils import ToRGB, RotationTransform
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 from tqdm import tqdm
 import random
+import glob
 
 
 class SketchDataset(ABC, Dataset):
@@ -128,26 +129,6 @@ class SketchTestDataset(SketchDataset):
 
     def get_txt_name(self):
         return "test.txt"
-
-
-class RotationTransform:
-    """Rotate by one of the given angles."""
-
-    def __init__(self, angle):
-        self.angle = angle
-
-    def __call__(self, x):
-        return TF.rotate(x, self.angle)
-
-
-class ToRGB:
-    def __init__(self):
-        pass
-
-    def __call__(self, x):
-        if x.shape[0] == 1:
-            return x.repeat(3, 1, 1)
-        return x
 
 
 class FlickrDataset(Dataset):
@@ -313,6 +294,60 @@ class TripletDataset(Dataset):
     def on_epoch_end(self):
         print("\nRefreshing dataset")
         self._triplets, self._triplets_labels = self._create_triplets()
+
+
+class SimpleDataset(Dataset):
+    def __init__(self, path: str):
+        self._path = path
+        self._images = self._read_images()
+        self._all_images = []
+        self._all_images_class = []
+        for k, v in self._images.items():
+            self._all_images.extend(v)
+            self._all_images_class.extend([k] * len(v))
+
+        self.process_image_pipeline = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Resize(224),
+            RotationTransform(90),
+            transforms.CenterCrop(224)
+            # transforms.Normalize(self.mean, self.std),
+        ])
+
+    def _read_images(self):
+        raise NotImplementedError
+
+    def __getitem__(self, item):
+
+        path = self._all_images[item]
+        arr = Image.open(self._all_images[item])
+        arr = self.process_image_pipeline(arr)
+        label = self._all_images_class[item]
+        return path, arr, label
+
+    def __len__(self):
+        return len(self._all_images)
+
+    def get_process_pipeline(self):
+        return self.process_image_pipeline
+
+
+class ImageFlickr15K(SimpleDataset):
+
+    def __init__(self, path: str):
+        super(ImageFlickr15K, self).__init__(path)
+
+    def _read_images(self):
+        """
+        Read the paths of images and organize them by class.
+        """
+        images = {}
+        folders = glob.glob(os.path.join(self._path, "images/*"))
+        for folder in folders:
+            class_label = int(folder.split("/")[-1])
+            images_path = glob.glob(os.path.join(folder, "*.jpg")) + glob.glob(os.path.join(folder, "*.png"))
+            images[class_label] = images_path
+        return images
 
 
 if __name__ == '__main__':

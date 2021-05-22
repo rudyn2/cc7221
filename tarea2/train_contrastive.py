@@ -169,7 +169,7 @@ if __name__ == '__main__':
             loss_classifier_flickr = cross_entropy_loss(pred_logits_second, second_label)
             loss = 0.6 * (0.5 * (loss_classifier_flickr + loss_classifier_sketches)) + 0.4 * loss_contrastive
 
-            train_total_loss += loss.item()
+            val_total_loss += loss.item()
             avg_val_loss = val_total_loss / (i + 1)
 
             items = min(n_train, (i + 1) * train_loader.batch_size)
@@ -184,7 +184,7 @@ if __name__ == '__main__':
             running_acc_sketches += torch.sum(max_idx == second_label).item()
             avg_sketches_val_acc = running_acc_sketches / items * 100
 
-        avg_val_loss = val_total_loss
+        avg_val_loss = val_total_loss / len(val_loader)
 
         if not args.debug:
             wandb.log({'val/loss': avg_val_loss, 'val/acc flickr': avg_val_flicker_acc,

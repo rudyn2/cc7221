@@ -1,19 +1,17 @@
 import os
+import random
 import re
-
+import glob
 import cv2
-import kornia.augmentation
+import kornia.augmentation as K
 import numpy as np
 import torch
-from torch.utils.data import Dataset
-from tqdm import tqdm
-from torchvision import transforms
-import torchvision.transforms.functional as TF
-import random
-import kornia.augmentation as K
 import torch.nn as nn
-
+import torchvision.transforms.functional as TF
 from PIL import Image
+from torch.utils.data import Dataset
+from torchvision import transforms
+from tqdm import tqdm
 
 
 class RotationTransform:
@@ -131,7 +129,6 @@ class ImageDataset(Dataset):
         assert index < len(self), f"Index must be less or equal to {len(self) - 1}"
 
         arr = Image.open(os.path.join(self.path, self.image_keys[index]))
-        #arr = np.array(arr)
         if self._process:
             arr = self.process_image_pipeline(arr)
         elif self._process == False:
@@ -167,6 +164,7 @@ class TrainImageDataset(ImageDataset):
     def define_dataset_meta(self):
         return "train_sample.txt"
 
+
 class VisualDataset(ImageDataset):
 
     def __init__(self, path: str, width: int, height: int, process: bool = True):
@@ -174,6 +172,7 @@ class VisualDataset(ImageDataset):
 
     def define_dataset_meta(self):
         return "test_sample.txt"
+
 
 class TestImageDataset(ImageDataset):
 
@@ -208,9 +207,10 @@ class ImageOfflineDataset(ImageDataset):
 if __name__ == '__main__':
 
     from torch.utils.data import DataLoader
-
     #
-    train_dataset = TrainImageDataset(r"C:\Users\aleja\Desktop\Tareas\Reconocimiento Virtual con Deep Learning\Tarea1\Imagenes\clothing-small", 224, 224)
+    train_dataset = TrainImageDataset(
+        r"C:\Users\aleja\Desktop\Tareas\Reconocimiento Virtual con Deep Learning\Tarea1\Imagenes\clothing-small", 224,
+        224)
     train_dataset.calculate_stats()
     train_dataset.read_mapping()
     # test_dataset = TestImageDataset("/home/rudy/Documents/cc7221/tarea1/data/clothing-small", 224, 224)
@@ -221,4 +221,3 @@ if __name__ == '__main__':
     for i in tqdm(range(len(train_dataset))):
         img, label = train_dataset[i]
         break
-
