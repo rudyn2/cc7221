@@ -117,12 +117,12 @@ if __name__ == '__main__':
             avg_acc_train_anchor = running_acc_anchor / items * 100
 
             # accuracy positive
-            _, max_idx = torch.max(pred_feats_positive, dim=1)
+            _, max_idx = torch.max(pred_logits_positive, dim=1)
             running_acc_positive += torch.sum(max_idx == p_l).item()
             avg_acc_train_positive = running_acc_positive / items * 100
 
             # accuracy negative
-            _, max_idx = torch.max(pred_feats_negative, dim=1)
+            _, max_idx = torch.max(pred_logits_negative, dim=1)
             running_acc_negative += torch.sum(max_idx == n_l).item()
             avg_acc_train_negative = running_acc_negative / items * 100
 
@@ -139,6 +139,7 @@ if __name__ == '__main__':
                            'train/acc negative': avg_acc_train_negative})
 
         avg_train_loss = train_total_loss / len(train_loader)
+        train_loader.dataset.dataset.on_epoch_end()
 
         if not args.debug:
             wandb.log({'train/loss': avg_train_loss, 'epoch': epoch + 1})
@@ -179,16 +180,16 @@ if __name__ == '__main__':
             avg_acc_val_anchor = running_acc_anchor / items * 100
 
             # accuracy positive
-            _, max_idx = torch.max(pred_feats_positive, dim=1)
+            _, max_idx = torch.max(pred_logits_positive, dim=1)
             running_acc_positive += torch.sum(max_idx == p_l).item()
             avg_acc_val_positive = running_acc_positive / items * 100
 
             # accuracy negative
-            _, max_idx = torch.max(pred_feats_negative, dim=1)
+            _, max_idx = torch.max(pred_logits_negative, dim=1)
             running_acc_negative += torch.sum(max_idx == n_l).item()
             avg_acc_val_negative = running_acc_negative / items * 100
 
-        avg_val_loss = val_total_loss
+        avg_val_loss = val_total_loss / len(val_loader)
 
         if not args.debug:
             wandb.log({'val/loss': avg_val_loss,
