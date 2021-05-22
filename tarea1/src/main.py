@@ -9,7 +9,7 @@ from resnet50 import ResNet50
 from resnext50 import resnext50
 from alexnet import AlexNet
 from train import train_for_classification
-from utils import plot_metrics
+from tarea2.utils import plot_metrics
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train utility",

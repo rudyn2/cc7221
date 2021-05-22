@@ -1,17 +1,13 @@
-from typing import List, Tuple, Union
-import glob
+from typing import List, Tuple
 import os
-import numpy as np
 import torch.nn
-from typing import Union
 from models import SiameseNetwork
 import re
-from similarities import SimilarityMeasure
 from PIL import Image
 from torchvision.transforms import transforms
-from utils import RotationTransform, ToRGB
+from tarea2.utils import RotationTransform
 from tqdm import tqdm
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from feats import ImageFlickrFeatures
 
 
