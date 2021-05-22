@@ -9,7 +9,6 @@ USER root
 
 RUN mkdir /home/cc7221
 WORKDIR /home/cc7221
-COPY requirements.txt /home/cc7221/requirements.txt
 # RUN apt-get update
 RUN pip install wandb
 
