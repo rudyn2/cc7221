@@ -48,13 +48,10 @@ if __name__ == '__main__':
     print("[*] Initializing weights...")
     imagenet_net = ResNet34()
     sketches_net = ResNet34()
-    sketches_net.load_state_dict(torch.load(args.sketches_backbone_weights))
+    # sketches_net.load_state_dict(torch.load(args.sketches_backbone_weights))
     print("[+] Weights loaded")
 
     print("[*] Adapting output layers...")
-    sketches_net.adapt_fc()
-    imagenet_net.adapt_fc()
-    print("[+] Layers successfully adapted")
 
     print("[*] Initializing model, loss and optimizer")
     siamese_net = SiameseNetwork(sketches_net, imagenet_net)
