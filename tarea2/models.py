@@ -57,11 +57,11 @@ class SiameseNetwork(nn.Module):
         self._imagenet_side.adapt_fc(fc1, fc2, fc3, bn)
 
     def extract_features_image(self, image_batch):
-        _, feats = self._imagenet_backbone.forward_extended(image_batch)
+        _, feats = self._imagenet_side.forward_extended(image_batch)
         return feats
 
     def extract_features_sketch(self, image_batch):
-        _, feats = self._sketches_backbone.forward_extended(image_batch)
+        _, feats = self._sketches_side.forward_extended(image_batch)
         return feats
 
     def forward(self, x, include_negative: bool = True):

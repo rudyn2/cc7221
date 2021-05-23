@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="Train model utility",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--siamese-weights', default='weights/best_SiameseNetwork_contrastive.pth',
+    parser.add_argument('--siamese-weights', default='weights/best_SiameseNetwork_triplet.pth',
                         type=str, help='Path to Siamese network weights')
     parser.add_argument('--flickr-15k', default='data/Flickr15K', type=str,
                         help='Path to flickr dataset folder')
@@ -81,9 +81,6 @@ if __name__ == '__main__':
     sketches_net = ResNet34()
 
     print("[*] Adapting output layers and loading weights...")
-    sketches_net.adapt_fc()
-    imagenet_net.adapt_fc()
-
     siamese_net = SiameseNetwork(sketches_net, imagenet_net)
     siamese_net.load_state_dict(torch.load(args.siamese_weights))
     print("[+] Done!")
