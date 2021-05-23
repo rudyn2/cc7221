@@ -33,8 +33,8 @@ if __name__ == '__main__':
 
     print("[*] Initializing data")
     device = args.device
-    train_flickr = FlickrDataset(args.flickr)
     train_sketches = SketchTrainDataset(args.sketches)
+    train_flickr = FlickrDataset(args.flickr, class_mapping=train_sketches.class_mapping)
     dataset = TripletDataset(flickr_dataset=train_flickr, sketches_dataset=train_sketches)
 
     n_val = int(len(dataset) * 0.1)
