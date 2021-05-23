@@ -8,54 +8,94 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import numpy as np
 import random
-
-from dataset import SketchTestDataset
-from model_sketchz import ResNet34
+from os import listdir
+# from dataset import SketchTestDataset
+from models import ResNet34
 from metrics import *
+from ranking import Ranker
+from feats import ImageFlickrFeatures
+from models import SiameseNetwork
+from distances import *
+
+
 class Evaluator:
 
-    def __init__(self, dataset: SketchTestDataset, true_labels: list, device: str = 'cuda', batch_size: int = 32):
-        self.dataset = dataset
-        self.true_labels = true_labels
-        self.device = device
-        self.batch_size = batch_size
-        self.overall_accuracy = None
-        self.test_acc_per_class = None
-        self.model_accuracies = {}
-#in contruction
+    def __init__(self, path_wieght: str, path_data: str, similarity):
+        self.path_weight = path_wieght
+        self.path_data = path_data
+        self.similarity = similarity
+        self.flickr_dataset = ImageFlickrFeatures("dbs/features.db")
+        # self.ranking = ranking
+
+        imagenet_net = ResNet34()
+        sketches_net = ResNet34()
+
+        # print("Adapting output layers...")
+        sketches_net.adapt_fc()
+        imagenet_net.adapt_fc()
+
+        siamese_net = SiameseNetwork(sketches_net, imagenet_net)
+        siamese_net.load_state_dict(torch.load(
+            self.path_weight))  # r'C:\Users\aleja\Desktop\Tareas\Reconocimiento Virtual con Deep Learning\T2\best_SiameseNetwork_contrastive.pth'
+        self.net = siamese_net
+        self.ranking = Ranker(self.path_data,
+                              image_dataset_features=self.flickr_dataset,
+                              feature_extractor=self.net,
+                              similarity_fn=self.similarity)
 
 
 
 
+    def calc_rank(self, path_img):
+        rank = self.ranking.get_rank(path_img)
+        return rank
+
+    def calc_all_ranks(self, path_querys):
+        self.imgs_names = listdir(path_querys)
+        for i in range(len(self.imgs_names)):
+            self.imgs_names[i] = path_querys + '/' + self.imgs_names[i]
+
+        self.classes = []
+        self.ranks = []
+        for i in range(len(self.imgs_names)):
+            c, rank = self.ranking.get_rank(self.imgs_names[i])
+            self.classes.append(c)
+            self.ranks.append(rank)
+
+    def calc_map(self):
+        mean_ap = map(self.classes, self.ranks)
+        return mean_ap
+
+    def calc_recall_ratio(self, len_class_path: str):
+        x, y = recall_ratio_tot(self.classes, self.ranks, len_class_path)
+        plt.plot(x, y)
+        plt.xlabel('Recall')
+        plt.ylabel('Retrieved images')
+        plt.title('Recall ratio Curve')
+        return x, y
+
+    def calc_recall_prec(self, len_class_path: str):
+        rp = recall_prec_tot(self.classes, self.ranks, len_class_path)
+        rec = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        plt.plot(rec, rp)
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title('Recall-Precision Curve')
+        return rp
+
+
+# in contruction
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Evaluation utility",
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--data', required=True, type=str, help='Path to folder containing test dataset')
-    parser.add_argument('--device', default='cuda', type=str, help='Device in which to perform the evaluation')
-    parser.add_argument('--weights', required=True, type=str, help='Path to weights of specified model')
-    parser.add_argument('--output_image', default='models_acc.png', type=str,
-                        help='Output path of per-class model results')
-    parser.add_argument('--batch-size', default=8, type=int, help='Batch size used to evaluate model')
-
-    args = parser.parse_args()
-    torch.random.manual_seed(42)
-    np.random.seed(42)
-    random.seed(42)
-
-    model = ResNet34(num_classes=8)
-
-    # load weights
-    if not args.weights.__contains__(','):
-        models[0].load_state_dict(torch.load(args.weights))
-        models[0].to(args.device)
-        models[0].eval()
-    else:
-        print("Multiple models...")
-        weight_paths = args.weights.split(",")
-        for i, weight_path in enumerate(weight_paths):
-            print(f"Loading {weight_path}")
-            models[i].load_state_dict(torch.load(weight_path))
-            models[i].to(args.device)
-            models[i].eval()
+    pw = r'C:\Users\aleja\Desktop\Tareas\Reconocimiento Virtual con Deep Learning\T2\best_SiameseNetwork_contrastive.pth'
+    pd = 'B:\Flickr\Flickr15K'
+    l_c = 'B:\Flickr\Flickr15K\images'
+    sim = torch.nn.CosineSimilarity()
+    a = Evaluator(pw, pd, sim)
+    pq = r'B:\Flickr\Flickr15K\queries'
+    a.calc_all_ranks(pq)
+    mapita = a.calc_map()
+    x, y = a.calc_recall_ratio(l_c)
+    rp = a.calc_recall_prec(l_c)
+    rp = a.calc_recall_prec(l_c)
