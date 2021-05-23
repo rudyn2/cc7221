@@ -132,13 +132,14 @@ class SketchTestDataset(SketchDataset):
 
 
 class FlickrDataset(Dataset):
-    def __init__(self, path: str):
+    def __init__(self, path: str, class_mapping: dict):
         super(FlickrDataset, self).__init__()
         self._path = path
-        self._class_mapping = {}            # class number -> class label
+
         self._images = {}
         self.read()
-        self._class_mapping_inverted = {v: k for k, v in self._class_mapping.items()}   # class label -> class number
+        self._class_mapping = class_mapping              # class number -> class label
+        self._class_mapping_inverted = {v: k for k, v in self._class_mapping.items()}
 
         self._class_groups = self._build_groups()
         self._images_path = list(self._images.keys())
@@ -162,7 +163,6 @@ class FlickrDataset(Dataset):
     def read(self):
         folders = [f for f in listdir(self._path) if isdir(join(self._path, f))]
         for i, folder in enumerate(folders):
-            self._class_mapping[i] = folder.replace('-', '_')
             for image in listdir(join(self._path, folder)):
                 full_path = join(self._path, folder, image)
                 self._images[full_path] = i
@@ -199,6 +199,14 @@ class FlickrDataset(Dataset):
     @property
     def class_mapping_inverted(self):
         return self._class_mapping_inverted
+
+    @class_mapping.setter
+    def class_mapping(self, value):
+        self._class_mapping = value
+
+    @class_mapping_inverted.setter
+    def class_mapping_inverted(self, value):
+        self._class_mapping_inverted = value
 
 
 class ContrastiveDataset(Dataset):
@@ -353,20 +361,21 @@ class ImageFlickr15K(SimpleDataset):
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
 
-    train_flickr_dataset = FlickrDataset('/home/rudy/Documents/cc7221/tarea2/data/Flickr25K')
-    train_flickr_loader = DataLoader(train_flickr_dataset, batch_size=8)
-    for images, labels in train_flickr_loader:
-        print(images.shape)
-        break
-
     train_sketches_dataset = SketchTrainDataset('/home/rudy/Documents/cc7221/tarea2/data/Sketch_EITZ')
     train_loader = DataLoader(train_sketches_dataset, batch_size=8)
     for images, labels in train_loader:
         print(images.shape)
         break
 
+    train_flickr_dataset = FlickrDataset('/home/rudy/Documents/cc7221/tarea2/data/Flickr25K',
+                                         class_mapping=train_sketches_dataset.class_mapping)
+    train_flickr_loader = DataLoader(train_flickr_dataset, batch_size=8)
+    for images, labels in train_flickr_loader:
+        print(images.shape)
+        break
+
     print("\nCreating contrastive dataset")
-    train_contrastive = ContrastiveDataset(train_flickr_dataset, train_sketches_dataset)
+    train_contrastive = ContrastiveDataset(train_flickr_dataset, train_sketches_dataset, 1, 1)
     d = train_contrastive[0]
     train_contrastive_loader = DataLoader(train_contrastive, batch_size=8)
     for flickr_images, _, _, _, _ in train_contrastive_loader:
