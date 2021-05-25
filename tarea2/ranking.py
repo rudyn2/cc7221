@@ -94,10 +94,6 @@ if __name__ == '__main__':
     imagenet_net = ResNet34()
     sketches_net = ResNet34()
 
-    print("Adapting output layers...")
-    sketches_net.adapt_fc()
-    imagenet_net.adapt_fc()
-
     siamese_net = SiameseNetwork(sketches_net, imagenet_net)
     siamese_net.load_state_dict(torch.load("weights/best_SiameseNetwork_contrastive.pth"))
 
