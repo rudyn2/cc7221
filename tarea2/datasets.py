@@ -131,6 +131,78 @@ class SketchTestDataset(SketchDataset):
         return "test.txt"
 
 
+class FlickrDataset2(Dataset):
+    def __init__(self, path: str):
+        super(FlickrDataset2, self).__init__()
+        self._path = path
+        self._class_mapping = {}            # class number -> class label
+        self._images = {}
+        self.read()
+        self._class_mapping_inverted = {v: k for k, v in self._class_mapping.items()}   # class label -> class number
+
+        self._class_groups = self._build_groups()
+        self._images_path = list(self._images.keys())
+        self.process_image_pipeline = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            RotationTransform(90),
+            ToRGB(),
+            # transforms.Normalize(self.mean, self.std),
+        ])
+
+    def _build_groups(self):
+        groups = defaultdict(list)
+        for img_path, class_number in self._images.items():
+            group_label = self._class_mapping[class_number]
+            groups[group_label].append(img_path)
+        print(f"[FLICKR] {len(groups)} classes with a total of {sum([len(g) for g in groups.values()])} samples")
+        return groups
+
+    def read(self):
+        folders = [f for f in listdir(self._path) if isdir(join(self._path, f))]
+        for i, folder in enumerate(folders):
+            self._class_mapping[i] = folder.replace('-', '_')
+            for image in listdir(join(self._path, folder)):
+                full_path = join(self._path, folder, image)
+                self._images[full_path] = i
+
+    def __getitem__(self, item: int) -> Tuple[torch.Tensor, int]:
+        img_path = self._images_path[item]
+        img_class = self._images[img_path]
+        img = Image.open(img_path)
+        img = self.process_image_pipeline(img)
+        return img, img_class
+
+    def __len__(self) -> int:
+        return len(self._images_path)
+
+    def get_random_from_class(self, class_label: str) -> Tuple[str, int]:
+        class_group = self._class_groups[class_label]
+        label = self._class_mapping_inverted[class_label]
+        sample = random.sample(class_group, 1)[0]
+        return sample, label
+
+    def get_random_from_non_class(self, class_label: str) -> Tuple[str, int]:
+        negative_groups = [gk for gk in self._class_groups.keys() if gk != class_label]
+        negative_class = random.sample(negative_groups, 1)[0]
+        return self.get_random_from_class(negative_class)
+
+    @property
+    def class_mapping(self):
+        return self._class_mapping
+
+    @property
+    def images(self):
+        return self._images
+
+    @property
+    def class_mapping_inverted(self):
+        return self._class_mapping_inverted
+
+
+
+
 class FlickrDataset(Dataset):
     def __init__(self, path: str, class_mapping: dict):
         super(FlickrDataset, self).__init__()
@@ -352,7 +424,7 @@ class ImageFlickr15K(SimpleDataset):
         images = {}
         folders = glob.glob(os.path.join(self._path, "images/*"))
         for folder in folders:
-            class_label = int(folder.split("/")[-1])
+            class_label = int(os.path.basename(folder))
             images_path = glob.glob(os.path.join(folder, "*.jpg")) + glob.glob(os.path.join(folder, "*.png"))
             images[class_label] = images_path
         return images

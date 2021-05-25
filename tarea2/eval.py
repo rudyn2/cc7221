@@ -20,19 +20,17 @@ from distances import *
 
 class Evaluator:
 
-    def __init__(self, path_wieght: str, path_data: str, similarity):
+    def __init__(self, path_wieght: str, path_data: str, similarity, path_feat: str):
         self.path_weight = path_wieght
         self.path_data = path_data
         self.similarity = similarity
-        self.flickr_dataset = ImageFlickrFeatures("dbs/features.db")
+        self.flickr_dataset = ImageFlickrFeatures(path_feat)#dbs/features_contrastive.db
         # self.ranking = ranking
 
         imagenet_net = ResNet34()
         sketches_net = ResNet34()
 
         # print("Adapting output layers...")
-        sketches_net.adapt_fc()
-        imagenet_net.adapt_fc()
 
         siamese_net = SiameseNetwork(sketches_net, imagenet_net)
         siamese_net.load_state_dict(torch.load(
