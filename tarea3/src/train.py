@@ -244,7 +244,7 @@ if __name__ == '__main__':
     #     nms_thresh=args.nms_thresh,
     #     detections_per_img=args.detections_per_img
     # )
-    model = create_model("resnet101",
+    model = create_model(args.backbone,
                          score_thresh=args.score_thresh,
                          nms_thresh=args.nms_thresh,
                          detections_per_img=args.detections_per_img)
@@ -257,4 +257,6 @@ if __name__ == '__main__':
                          val_size=args.val_size,
                          device='cuda',
                          use_wandb=False)
+
+    wandb.config.backbone = args.backbone
     trainer.train()
