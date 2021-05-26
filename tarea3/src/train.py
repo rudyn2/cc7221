@@ -256,7 +256,7 @@ if __name__ == '__main__':
                          batch_size=args.batch_size,
                          val_size=args.val_size,
                          device='cuda',
-                         use_wandb=False)
+                         use_wandb=True)
 
     wandb.config.backbone = args.backbone
     trainer.train()
