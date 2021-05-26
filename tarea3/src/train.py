@@ -214,6 +214,7 @@ if __name__ == '__main__':
     parser.add_argument('--val-size', default=0.05, type=float, help='Validation size')
 
     # model init
+    parser.add_argument('--backbone', default='resnet50', help='Type of backbone')
     parser.add_argument('--pretrained', action='store_true', help='Whether to use pretrained model on COCO 2017')
     parser.add_argument('--pretrained-backbone', action='store_true',
                         help='Whether to use pretrained backbone on ImageNet')
