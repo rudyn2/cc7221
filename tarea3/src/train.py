@@ -119,6 +119,7 @@ class OCRTrainer(object):
                 torch.save(self.model.state_dict(), model_name)
                 if self.use_wandb:
                     wandb.save(model_name)
+        self.save_metrics()
         print("Training finished!")
 
     def eval(self) -> float:
@@ -160,7 +161,7 @@ class OCRTrainer(object):
 
         if self.use_wandb:
             wandb.log({'val/map@50': mean_map_50, 'val/map@75': mean_map_75, 'val/map@95': mean_map_95})
-        print(f"Val mAP@50: {mean_map_50:.2f}, mAP@95: {mean_map_95:.2f}, mAP@75: {mean_map_75:.2f}")
+        print(f"Val mAP@50: {mean_map_50:.2f}, mAP@75: {mean_map_75:.2f}, mAP@95: {mean_map_95:.2f}")
         return float(mean_map_50)
 
     @staticmethod
