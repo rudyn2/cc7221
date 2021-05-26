@@ -26,7 +26,9 @@ class OrandCarDataset(Dataset):
         self.transform = A.Compose([
             A.Resize(65, 271),  # here we can add other transformations as well
             ToTensorV2(),
-        ], bbox_params=A.BboxParams(format='coco', min_area=128, min_visibility=0.1, label_fields=['labels']))
+        ], bbox_params=A.BboxParams(format='coco', min_area=0, min_visibility=0.1, label_fields=['labels']))
+
+        # self._images = self._images[:100]
 
     def _read(self):
         training_folder = os.path.join(self._path, "training")
@@ -63,7 +65,7 @@ class OrandCarDataset(Dataset):
         for line in lines:
             s = line.rstrip().split(":")
             class_label = int(s[0])
-            bbox_coords = [int(c) for c in s[1].split(",")]
+            bbox_coords = [max(0, int(c)) for c in s[1].split(",")]
             bboxes.append({
                 "box": bbox_coords,
                 "label": class_label,
@@ -90,6 +92,7 @@ class OrandCarDataset(Dataset):
         image = cv2.imread(str(image_path))
 
         transformed = self.transform(image=image, bboxes=bboxes_list, labels=labels_list)
+        transformed_image = transformed['image'] / 255.0
 
         # parse bboxes from xywh to xyxy
         transformed_bboxes = torch.stack([torch.tensor(b) for b in transformed['bboxes']])
@@ -97,7 +100,7 @@ class OrandCarDataset(Dataset):
 
         # parse labels
         transformed_labels = torch.stack([torch.tensor(l) for l in transformed['labels']])
-        return transformed['image'], dict(boxes=transformed_bboxes, labels=transformed_labels)
+        return transformed_image, dict(boxes=transformed_bboxes, labels=transformed_labels)
 
     def __len__(self) -> int:
         return len(self._images)
@@ -112,11 +115,13 @@ def custom_collate_fn(batch):
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
     import matplotlib.pyplot as plt
+    from tqdm import tqdm
 
     d = OrandCarDataset("/home/rudy/Documents/cc7221/tarea3/data/orand-car-with-bbs")
 
     print("Visualizing random image")
     image, targets = d[0]
+    image = (image * 255).type(torch.ByteTensor)
     labels_ = [str(s) for s in list(targets['labels'].numpy())]
     to_show = torchvision.utils.draw_bounding_boxes(image, targets['boxes'], labels_)
 
@@ -125,6 +130,5 @@ if __name__ == '__main__':
 
     print("\nTesting loader...")
     loader = DataLoader(d, batch_size=8, collate_fn=custom_collate_fn)
-    for images, bboxes in loader:
-        print(images.shape)
-        break
+    for images, bboxes in tqdm(loader, "Verifying"):
+        continue
