@@ -1,5 +1,8 @@
+import json
 import sys
 from collections import defaultdict
+from datetime import datetime
+from typing import List, Dict, Tuple
 
 import numpy as np
 import torch
@@ -12,8 +15,7 @@ from bounding_box import BoundingBox
 from datasets import OrandCarDataset, custom_collate_fn
 from enums import *
 from evaluator import get_coco_metrics
-import json
-from datetime import datetime
+from models import create_model
 
 
 class OCRTrainer(object):
@@ -37,7 +39,7 @@ class OCRTrainer(object):
         self.val_loader = DataLoader(val, batch_size=self.params['batch_size'] // 2, collate_fn=custom_collate_fn)
 
         # metrics
-        self.metrics = defaultdict(list)    # epoch wise metrics
+        self.metrics = defaultdict(list)  # epoch wise metrics
 
         self.use_wandb = kwargs['use_wandb']
         if self.use_wandb:
@@ -68,7 +70,10 @@ class OCRTrainer(object):
             if self.use_wandb:
                 wandb.save(path)
 
-    def optimize(self, batch: tuple):
+    def optimize(self, batch: tuple) -> float:
+        """
+        Optimize the model for a given batch and a certain loss function using the optimizer defined at initialization.
+        """
 
         self.optimizer.zero_grad()
         losses = self.model(*self.batch_to_device(batch))
@@ -78,6 +83,9 @@ class OCRTrainer(object):
         return total_loss.item()
 
     def train(self):
+        """
+        Train a model. Evaluate once every epoch.
+        """
 
         print("Training...")
         best_val_metric = 0
@@ -113,7 +121,7 @@ class OCRTrainer(object):
                     wandb.save(model_name)
         print("Training finished!")
 
-    def eval(self):
+    def eval(self) -> float:
         """
         Evaluate the current model. Return a single valued metric. This metric will be used for checkpointing.
         """
@@ -153,10 +161,12 @@ class OCRTrainer(object):
         if self.use_wandb:
             wandb.log({'val/map@50': mean_map_50, 'val/map@75': mean_map_75, 'val/map@95': mean_map_95})
         print(f"Val mAP@50: {mean_map_50:.2f}, mAP@95: {mean_map_95:.2f}, mAP@75: {mean_map_75:.2f}")
-        return mean_map_50
+        return float(mean_map_50)
 
     @staticmethod
-    def to_bounding_box(gt_boxes, pred_boxes):
+    def to_bounding_box(gt_boxes: List[Dict[str, torch.Tensor]],
+                        pred_boxes: List[Dict[str, torch.Tensor]]) -> Tuple[List[BoundingBox], List[BoundingBox]]:
+
         gt_parsed_boxes, pred_parsed_boxes = [], []
 
         # for each image
@@ -217,20 +227,25 @@ if __name__ == '__main__':
                         help="Number of best detections to keep after NMS.")
 
     # training parameters
-    parser.add_argument('--batch-size', default=4, type=int, help="Batch size")
+    parser.add_argument('--batch-size', default=2, type=int, help="Batch size")
     parser.add_argument('--epochs', default=10, type=int, help="Number of epochs")
     parser.add_argument('--lr', default=0.001, type=float, help='Initial learning rate')
 
     args = parser.parse_args()
 
-    model = torchvision.models.detection.retinanet_resnet50_fpn(
-        pretrained=args.pretrained,
-        num_classes=10,
-        pretrained_backbone=args.pretrained_backbone,
-        score_thresh=args.score_thresh,
-        nms_thresh=args.nms_thresh,
-        detections_per_img=args.detections_per_img
-    )
+    torch.cuda.empty_cache()
+    # model = torchvision.models.detection.retinanet_resnet50_fpn(
+    #     pretrained=args.pretrained,
+    #     num_classes=10,
+    #     pretrained_backbone=args.pretrained_backbone,
+    #     score_thresh=args.score_thresh,
+    #     nms_thresh=args.nms_thresh,
+    #     detections_per_img=args.detections_per_img
+    # )
+    model = create_model("resnet101",
+                         score_thresh=args.score_thresh,
+                         nms_thresh=args.nms_thresh,
+                         detections_per_img=args.detections_per_img)
     dataset = OrandCarDataset(args.data)
     trainer = OCRTrainer(model=model,
                          dataset=dataset,
@@ -239,5 +254,5 @@ if __name__ == '__main__':
                          batch_size=args.batch_size,
                          val_size=args.val_size,
                          device='cuda',
-                         use_wandb=True)
+                         use_wandb=False)
     trainer.train()
