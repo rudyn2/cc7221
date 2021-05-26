@@ -7,7 +7,6 @@ from typing import List, Dict, Tuple
 import numpy as np
 import torch
 import torch.nn as nn
-import torchvision
 import wandb
 from torch.utils.data import DataLoader, random_split
 
@@ -30,6 +29,8 @@ class OCRTrainer(object):
         self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, patience=3)
         self.dataset = dataset
         self.params = kwargs
+        self.class_weight = float(kwargs['classification_weights'])
+        self.regression_weight = 1 - self.class_weight
 
         # initialize data loaders
         n_val = int(len(self.dataset) * self.params['val_size'])
@@ -52,6 +53,8 @@ class OCRTrainer(object):
             config.optimizer = self.optimizer.__class__.__name__
             config.train_size = n_train
             config.val_size = n_val
+            config.classification_weight = self.class_weight
+            config.regression_weight = self.regression_weight
 
     def batch_to_device(self, batch: tuple):
         # move the batch to the device
@@ -77,7 +80,7 @@ class OCRTrainer(object):
 
         self.optimizer.zero_grad()
         losses = self.model(*self.batch_to_device(batch))
-        total_loss = losses['classification'] * 0.5 + losses['bbox_regression'] * 0.5
+        total_loss = losses['classification'] * self.class_weight + losses['bbox_regression'] * self.regression_weight
         total_loss.backward()
         self.optimizer.step()
         return total_loss.item()
@@ -229,6 +232,10 @@ if __name__ == '__main__':
                         help="Number of best detections to keep after NMS.")
 
     # training parameters
+    parser.add_argument('--classification-weight', default=0.5, type=float,
+                        help="Weight 'w' associated to classification loss."
+                             "The regression weight will be determined"
+                             "as 1 - 'w'")
     parser.add_argument('--batch-size', default=2, type=int, help="Batch size")
     parser.add_argument('--epochs', default=10, type=int, help="Number of epochs")
     parser.add_argument('--lr', default=0.001, type=float, help='Initial learning rate')
@@ -236,14 +243,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     torch.cuda.empty_cache()
-    # model = torchvision.models.detection.retinanet_resnet50_fpn(
-    #     pretrained=args.pretrained,
-    #     num_classes=10,
-    #     pretrained_backbone=args.pretrained_backbone,
-    #     score_thresh=args.score_thresh,
-    #     nms_thresh=args.nms_thresh,
-    #     detections_per_img=args.detections_per_img
-    # )
     model = create_model(args.backbone,
                          score_thresh=args.score_thresh,
                          nms_thresh=args.nms_thresh,
@@ -252,6 +251,7 @@ if __name__ == '__main__':
     trainer = OCRTrainer(model=model,
                          dataset=dataset,
                          epochs=args.epochs,
+                         classification_weight=args.classification_weight,
                          initial_lr=args.lr,
                          batch_size=args.batch_size,
                          val_size=args.val_size,
