@@ -1,15 +1,19 @@
-from abc import ABC
-from abc import abstractmethod
-import torch
-import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader, random_split
-from datasets import OrandCarDataset, custom_collate_fn
 import sys
 from collections import defaultdict
-from utils import calculate_map
+
 import numpy as np
+import torch
+import torch.nn as nn
+import torchvision
 import wandb
+from torch.utils.data import DataLoader, random_split
+
+from bounding_box import BoundingBox
+from datasets import OrandCarDataset, custom_collate_fn
+from enums import *
 from evaluator import get_coco_metrics
+import json
+from datetime import datetime
 
 
 class OCRTrainer(object):
@@ -33,7 +37,7 @@ class OCRTrainer(object):
         self.val_loader = DataLoader(val, batch_size=self.params['batch_size'] // 2, collate_fn=custom_collate_fn)
 
         # metrics
-        self.metrics = defaultdict(list)
+        self.metrics = defaultdict(list)    # epoch wise metrics
 
         self.use_wandb = kwargs['use_wandb']
         if self.use_wandb:
@@ -57,6 +61,13 @@ class OCRTrainer(object):
             targets.append(target)
         return images, targets
 
+    def save_metrics(self):
+        path = f'metrics_{datetime.now()}.json'
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(self.metrics, f, ensure_ascii=False, indent=4)
+            if self.use_wandb:
+                wandb.save(path)
+
     def optimize(self, batch: tuple):
 
         self.optimizer.zero_grad()
@@ -77,7 +88,7 @@ class OCRTrainer(object):
 
                 batch_loss = self.optimize(batch)
                 epoch_batch_loss.append(batch_loss)
-                avg_epoch_loss = np.mean(epoch_batch_loss[-20:])    # use last 20 batch losses to calculate the mean
+                avg_epoch_loss = np.mean(epoch_batch_loss[-20:])  # use last 20 batch losses to calculate the mean
 
                 sys.stdout.write('\r')
                 sys.stdout.write(f"Epoch: {e + 1}({i + 1}/{len(self.train_loader)})| "
@@ -88,8 +99,6 @@ class OCRTrainer(object):
                     wandb.log({"train/loss": avg_epoch_loss})
 
             epoch_loss = np.mean(epoch_batch_loss)
-            # if self.use_wandb:
-            #     wandb.log({'train/loss': epoch_loss})
             self.metrics['train_loss'].append(epoch_loss)
 
             checkpoint_metric = self.eval()
@@ -102,13 +111,14 @@ class OCRTrainer(object):
                 torch.save(self.model.state_dict(), model_name)
                 if self.use_wandb:
                     wandb.save(model_name)
+        print("Training finished!")
 
     def eval(self):
         """
         Evaluate the current model. Return a single valued metric. This metric will be used for checkpointing.
         """
         self.model.eval()
-        val_maps_50, val_maps_95 = [], []
+        val_maps_50, val_maps_75, val_maps_95, = [], [], []
 
         print("\nValidating")
         for batch in self.val_loader:
@@ -116,24 +126,33 @@ class OCRTrainer(object):
             gts, dts = self.to_bounding_box(batch[1], preds)
 
             # calculate map@50
-            metrics = get_coco_metrics(gts, dts, iou_threshold=0.5)    # metrics per class
+            metrics = get_coco_metrics(gts, dts, iou_threshold=0.5)  # metrics per class
             aps_50 = [d['AP'] for d in metrics.values() if d['AP']]
             map_50 = np.mean(aps_50) if len(aps_50) > 0 else 0
             val_maps_50.append(map_50)
 
+            # calculate map@75
+            metrics = get_coco_metrics(gts, dts, iou_threshold=0.75)  # metrics per class
+            aps_75 = [d['AP'] for d in metrics.values() if d['AP']]
+            map_75 = np.mean(aps_75) if len(aps_75) > 0 else 0
+            val_maps_75.append(map_75)
+
             # calculate map@95
-            metrics = get_coco_metrics(gts, dts, iou_threshold=0.95)    # metrics per class
+            metrics = get_coco_metrics(gts, dts, iou_threshold=0.95)  # metrics per class
             aps_95 = [d['AP'] for d in metrics.values() if d['AP']]
             map_95 = np.mean(aps_95) if len(aps_95) > 0 else 0
             val_maps_95.append(map_95)
 
         mean_map_50 = np.mean(val_maps_50)
+        mean_map_75 = np.mean(val_maps_75)
         mean_map_95 = np.mean(val_maps_95)
         self.metrics['val_map_50'].append(mean_map_50)
+        self.metrics['val_map_75'].append(mean_map_75)
+        self.metrics['val_map_95'].append(mean_map_95)
 
         if self.use_wandb:
-            wandb.log({'val/map@50': mean_map_50, 'val/map@95': mean_map_95})
-        print(f"Val mAP@50: {mean_map_50:.2f}, mAP@95: {mean_map_95:.2f}")
+            wandb.log({'val/map@50': mean_map_50, 'val/map@75': mean_map_75, 'val/map@95': mean_map_95})
+        print(f"Val mAP@50: {mean_map_50:.2f}, mAP@95: {mean_map_95:.2f}, mAP@75: {mean_map_75:.2f}")
         return mean_map_50
 
     @staticmethod
@@ -177,24 +196,48 @@ class OCRTrainer(object):
 
 
 if __name__ == '__main__':
-    import torchvision
-    from bounding_box import BoundingBox
-    from enums import *
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Train model utility",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--data', default='../data/orand-car-with-bbs', type=str, help='Path to dataset folder')
+    parser.add_argument('--val-size', default=0.05, type=float, help='Validation size')
+
+    # model init
+    parser.add_argument('--pretrained', action='store_true', help='Whether to use pretrained model on COCO 2017')
+    parser.add_argument('--pretrained-backbone', action='store_true',
+                        help='Whether to use pretrained backbone on ImageNet')
+
+    # model post-processing
+    parser.add_argument('--score-thresh', default=0.5, type=float,
+                        help="Score threshold used for postprocessing the detections.")
+    parser.add_argument('--nms-thresh', default=0.5, type=float,
+                        help="NMS threshold used for postprocessing the detections.")
+    parser.add_argument('--detections-per-img', default=12, type=int,
+                        help="Number of best detections to keep after NMS.")
+
+    # training parameters
+    parser.add_argument('--batch-size', default=4, type=int, help="Batch size")
+    parser.add_argument('--epochs', default=10, type=int, help="Number of epochs")
+    parser.add_argument('--lr', default=0.001, type=float, help='Initial learning rate')
+
+    args = parser.parse_args()
+
     model = torchvision.models.detection.retinanet_resnet50_fpn(
-        pretrained=False,
+        pretrained=args.pretrained,
         num_classes=10,
-        pretrained_backbone=False
+        pretrained_backbone=args.pretrained_backbone,
+        score_thresh=args.score_thresh,
+        nms_thresh=args.nms_thresh,
+        detections_per_img=args.detections_per_img
     )
-    dataset = OrandCarDataset("/home/rudy/Documents/cc7221/tarea3/data/orand-car-with-bbs")
+    dataset = OrandCarDataset(args.data)
     trainer = OCRTrainer(model=model,
                          dataset=dataset,
-                         epochs=10,
-                         initial_lr=0.0001,
-                         batch_size=4,
-                         val_size=0.06,
+                         epochs=args.epochs,
+                         initial_lr=args.lr,
+                         batch_size=args.batch_size,
+                         val_size=args.val_size,
                          device='cuda',
                          use_wandb=True)
     trainer.train()
-
-
-
