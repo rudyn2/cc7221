@@ -29,7 +29,7 @@ class OCRTrainer(object):
         self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, patience=3)
         self.dataset = dataset
         self.params = kwargs
-        self.class_weight = float(kwargs['classification_weights'])
+        self.class_weight = float(kwargs['classification_weight'])
         self.regression_weight = 1 - self.class_weight
 
         # initialize data loaders

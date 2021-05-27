@@ -26,6 +26,11 @@ class OrandCarDataset(Dataset):
         self._read()
         self.transform = A.Compose([
             A.Resize(65, 271),  # here we can add other transformations as well
+            A.CLAHE(),
+            A.GaussianBlur(),
+            A.GaussNoise(),
+            A.RandomScale(),
+            A.RandomBrightnessContrast(),
             ToTensorV2(),
         ], bbox_params=A.BboxParams(format='coco', min_area=0, min_visibility=0.1, label_fields=['labels']))
 
