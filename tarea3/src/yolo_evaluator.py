@@ -18,7 +18,6 @@ class YoloEval(object):
         self.pd_folder_path = pd_folder_path
 
         self.gt = self._load_ground_truth()
-        print("")
 
     def _load_ground_truth(self):
         with open(self.gt_txt_path, "r") as f:
