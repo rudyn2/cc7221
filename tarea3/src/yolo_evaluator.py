@@ -1,6 +1,7 @@
 import glob
 import re
 from pathlib import Path
+from tqdm import tqdm
 
 
 class YoloEval(object):
@@ -52,14 +53,16 @@ class YoloEval(object):
         """
         files = glob.glob(self.pd_folder_path + "/*.txt")
         tp, total = 0, 0
-        for file in files:
+        for file in tqdm(files, "Processing "):
             file_path = Path(file)
             pred_number = self.read_prediction(file_path)
             expected_number = int(self.gt[file_path.stem])
             if pred_number == expected_number:
                 tp += 1
+            else:
+                print(f"Wrong prediction: {file_path}")
             total += 1
-        print(f"Accuracy: {100*(tp/total):.2f}%")
+        print(f"\nAccuracy: {100*(tp/total):.2f}%")
 
 
 if __name__ == '__main__':
