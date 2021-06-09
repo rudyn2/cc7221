@@ -29,7 +29,6 @@ class OrandCarDataset(Dataset):
             A.CLAHE(),
             A.GaussianBlur(),
             A.GaussNoise(),
-            A.RandomScale(),
             A.RandomBrightnessContrast(),
             ToTensorV2(),
         ], bbox_params=A.BboxParams(format='coco', min_area=0, min_visibility=0.1, label_fields=['labels']))
