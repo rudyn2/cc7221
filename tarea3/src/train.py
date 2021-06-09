@@ -130,42 +130,34 @@ class OCRTrainer(object):
         Evaluate the current model. Return a single valued metric. This metric will be used for checkpointing.
         """
         self.model.eval()
-        val_maps_50, val_maps_75, val_maps_95, = [], [], []
 
         print("\nValidating")
+        val_metrics = defaultdict(list)
         for batch in self.val_loader:
             preds = self.model(*self.batch_to_device(batch))
             gts, dts = self.to_bounding_box(batch[1], preds)
 
-            # calculate map@50
-            metrics = get_coco_metrics(gts, dts, iou_threshold=0.5)  # metrics per class
-            aps_50 = [d['AP'] for d in metrics.values() if d['AP']]
-            map_50 = np.mean(aps_50) if len(aps_50) > 0 else 0
-            val_maps_50.append(map_50)
+            iou_thresholds = np.linspace(0.5, 0.95, 10)
+            for iou in iou_thresholds:
+                # calculate map@50
+                metrics = get_coco_metrics(gts, dts, iou_threshold=iou)  # metrics per class
+                aps = [d['AP'] for d in metrics.values() if d['AP']]
+                map_ = np.mean(aps) if len(aps) > 0 else 0
+                val_metrics[f"iou_{iou}"].append(map_)
 
-            # calculate map@75
-            metrics = get_coco_metrics(gts, dts, iou_threshold=0.75)  # metrics per class
-            aps_75 = [d['AP'] for d in metrics.values() if d['AP']]
-            map_75 = np.mean(aps_75) if len(aps_75) > 0 else 0
-            val_maps_75.append(map_75)
+        map_5_95 = 0
+        for iou_threshold in np.linspace(0.5, 0.95, 10):
+            mean_map = np.mean(val_metrics[f"iou_{iou_threshold}"])
+            map_5_95 += mean_map
+            self.metrics[f'val_map_{iou_threshold}'].append(mean_map)
+        map_5_95 /= 10
+        map_5 = np.mean(val_metrics[f"iou_0.5"])
 
-            # calculate map@95
-            metrics = get_coco_metrics(gts, dts, iou_threshold=0.95)  # metrics per class
-            aps_95 = [d['AP'] for d in metrics.values() if d['AP']]
-            map_95 = np.mean(aps_95) if len(aps_95) > 0 else 0
-            val_maps_95.append(map_95)
-
-        mean_map_50 = np.mean(val_maps_50)
-        mean_map_75 = np.mean(val_maps_75)
-        mean_map_95 = np.mean(val_maps_95)
-        self.metrics['val_map_50'].append(mean_map_50)
-        self.metrics['val_map_75'].append(mean_map_75)
-        self.metrics['val_map_95'].append(mean_map_95)
-
+        # calculate mAP .5, .95
         if self.use_wandb:
-            wandb.log({'val/map@50': mean_map_50, 'val/map@75': mean_map_75, 'val/map@95': mean_map_95})
-        print(f"Val mAP@50: {mean_map_50:.2f}, mAP@75: {mean_map_75:.2f}, mAP@95: {mean_map_95:.2f}")
-        return float(mean_map_50)
+            wandb.log({'val/map@.5': map_5, 'val/map@.5,.95': map_5_95})
+        print(f"Val mAP@.5: {map_5:.2f}, mAP@.5,.95: {map_5_95:.2f}")
+        return float(map_5_95)
 
     @staticmethod
     def to_bounding_box(gt_boxes: List[Dict[str, torch.Tensor]],
