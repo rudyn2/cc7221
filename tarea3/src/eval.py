@@ -21,9 +21,9 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', default=8, type=int, help='Batch size used for evaluation')
 
     # post-processing parameters
-    parser.add_argument('--score-thresh', default=0.5, type=float,
+    parser.add_argument('--score-thresh', default=0.65, type=float,
                         help="Score threshold used for postprocessing the detections.")
-    parser.add_argument('--nms-thresh', default=0.5, type=float,
+    parser.add_argument('--nms-thresh', default=0.55, type=float,
                         help="NMS threshold used for postprocessing the detections.")
     parser.add_argument('--detections-per-img', default=12, type=int,
                         help="Number of best detections to keep after NMS.")
