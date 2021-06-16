@@ -37,7 +37,7 @@ class SpermTrainer(object):
         self.metrics = defaultdict(list)  # epoch wise metrics
 
         # loss
-        self.loss = FocalLoss()
+        self.loss = nn.CrossEntropyLoss()
 
         self.use_wandb = kwargs['use_wandb']
         if self.use_wandb:
@@ -76,7 +76,7 @@ class SpermTrainer(object):
         mask = batch[1]
         self.optimizer.zero_grad()
         pred_mask = self.model(images)['out']
-        total_loss = self.loss(mask, pred_mask)
+        total_loss = self.loss(pred_mask, mask)
         total_loss.backward()
         self.optimizer.step()
         return total_loss.item()
