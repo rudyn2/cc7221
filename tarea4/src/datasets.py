@@ -21,7 +21,8 @@ class CustomTransform:
     def __call__(self, image, mask):
         image = torch.tensor(image, device=self._device) / 255.0
         image = image.repeat(3, 1, 1)
-        mask = torch.tensor(mask, device=self._device) / 255.0
+        mask = torch.tensor(mask, device=self._device)
+        mask = mask / 255.0 if len(mask.shape) > 2 else mask
 
         if self.mode == "train":
             angle = random.choice(self.angles)
@@ -43,15 +44,19 @@ class CustomTransform:
 
 class SpermDataset(Dataset):
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, target_one_hot: bool = False):
         """
         SpermDataset Constructor.
         :param path: Path to dataset folder.
+        :param target_one_hot: If true, the target will receive one hot encoding formatting.
+                               Output dimension will be [CHANNELS, NUM_CLASSES, WIDTH, HEIGHT]
+                               instead of [CHANNELS, WIDTH, HEIGHT].
         """
         self._device = "cuda"
         self.path = path
         self.mode = "train"
         self.data = {"train": {}, "test": {}}
+        self.use_one_hot = target_one_hot
         self._load()
         self.segmentation_masks = self._build_segmentation()
         self.idx_to_key = {
@@ -94,7 +99,10 @@ class SpermDataset(Dataset):
             if mask[0] is None:
                 continue
 
-            seg[file_name] = np.stack(mask, axis=0)
+            file_mask = np.stack(mask, axis=0)
+            if not self.use_one_hot:
+                file_mask = np.argmax(file_mask, axis=0)
+            seg[file_name] = file_mask
         return seg
 
     def __getitem__(self, item: int):
