@@ -69,6 +69,8 @@ def run(args):
                                         device=device)
     train_evaluator = create_supervised_evaluator(model, metrics=metrics, device=device)
     val_evaluator = create_supervised_evaluator(model, metrics=metrics, device=device)
+    for label, metric in metrics.items():
+        metric.attach(trainer, label, "batch_wise")
 
     wandb_logger = WandBLogger(
         project="homework1-cc7221",
@@ -101,8 +103,6 @@ def run(args):
         pbar.update(log_interval)
 
     print(colored("[*] Attaching event handlers", "white"))
-    for label, metric in metrics.items():
-        metric.attach(trainer, label, "batch_wise")
 
     trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: train_evaluator.run(train_loader))
     trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: val_evaluator.run(val_loader))
