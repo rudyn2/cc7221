@@ -33,8 +33,7 @@ def output_transform_seg(process_output):
 
 
 def run(args):
-    # device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    device = 'cpu'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(colored("Using device: ", "white") + colored(device, "green"))
 
     print(colored("[*] Initializing dataset and dataloader", "white"))
