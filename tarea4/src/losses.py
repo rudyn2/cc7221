@@ -32,6 +32,7 @@ class FocalLoss(nn.Module):
                 raise ValueError('smooth value should be in [0,1]')
 
     def forward(self, logit, target):
+        logit = logit['out']
         if self.apply_nonlin is not None:
             logit = self.apply_nonlin(logit)
         num_class = logit.shape[1]

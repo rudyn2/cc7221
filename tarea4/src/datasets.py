@@ -22,7 +22,8 @@ class CustomTransform:
         image = torch.tensor(image, device=self._device) / 255.0
         image = image.repeat(3, 1, 1)
         mask = torch.tensor(mask, device=self._device)
-        mask = mask / 255.0 if len(mask.shape) > 2 else mask
+        mask = (mask / 255.0) if len(mask.shape) > 2 else mask
+        mask = mask.unsqueeze(0) if len(mask.shape) <= 2 else mask
 
         if self.mode == "train":
             angle = random.choice(self.angles)
