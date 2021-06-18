@@ -4,7 +4,7 @@ from termcolor import colored
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer
-from ignite.metrics import Loss, ConfusionMatrix, DiceCoefficient, IoU, MetricsLambda
+from ignite.metrics import Loss, ConfusionMatrix, DiceCoefficient, IoU, MetricsLambda, RunningAverage
 from ignite.utils import to_onehot
 from ignite.contrib.handlers import WandBLogger, global_step_from_engine
 from ignite.handlers import ModelCheckpoint, EarlyStopping
@@ -55,10 +55,11 @@ def run(args):
     print(colored("[+] Model, optimizer and loss are ready!", "green"))
 
     print(colored("[*] Creating engine and handlers", "white"))
-    score_function = lambda engine: -engine.state.output[2]
+    score_function = lambda engine: -engine.state.metrics['loss_avg']
     avg_fn = lambda x: torch.mean(x).item()
     cm_metric = ConfusionMatrix(num_classes=3, output_transform=output_transform_seg)
     metrics = {'loss': Loss(loss_fn=loss, output_transform=lambda x: (x[0], x[1])),
+               'loss_avg': RunningAverage(Loss(loss_fn=loss, output_transform=lambda x: (x[0], x[1]))),
                'dice': MetricsLambda(avg_fn, DiceCoefficient(cm_metric)),
                'iou': MetricsLambda(avg_fn, IoU(cm_metric))}
     trainer = create_supervised_trainer(model,
