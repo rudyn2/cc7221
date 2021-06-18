@@ -6,7 +6,8 @@ from torch.utils.data import DataLoader, random_split
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer
 from ignite.metrics import Loss, ConfusionMatrix, DiceCoefficient, IoU, MetricsLambda
 from ignite.utils import to_onehot
-from ignite.contrib.handlers import WandBLogger
+from ignite.contrib.handlers import WandBLogger, global_step_from_engine
+from ignite.handlers import ModelCheckpoint, EarlyStopping
 from losses import FocalLoss
 from tqdm import tqdm
 import torchvision
@@ -53,6 +54,8 @@ def run(args):
     loss = FocalLoss(apply_nonlin=torch.sigmoid)
     print(colored("[+] Model, optimizer and loss are ready!", "green"))
 
+    print(colored("[*] Creating engine and handlers", "white"))
+    score_function = lambda engine: -engine.state.output[2]
     avg_fn = lambda x: torch.mean(x).item()
     cm_metric = ConfusionMatrix(num_classes=3, output_transform=output_transform_seg)
     metrics = {'loss': Loss(loss_fn=loss, output_transform=lambda x: (x[0], x[1])),
@@ -66,11 +69,24 @@ def run(args):
                                         device=device)
     train_evaluator = create_supervised_evaluator(model, metrics=metrics, device=device)
     val_evaluator = create_supervised_evaluator(model, metrics=metrics, device=device)
-    trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: train_evaluator.run(train_loader))
-    trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: val_evaluator.run(val_loader))
 
-    for label, metric in metrics.items():
-        metric.attach(trainer, label, "batch_wise")
+    wandb_logger = WandBLogger(
+        project="homework1-cc7221",
+        entity="p137",
+        name="sperm-segmentation",
+        config={"max_epochs": args.epochs, "batch_size": args.batch_size},
+        tags=["pytorch-ignite", "sperm-seg"]
+    )
+    model_checkpoint = ModelCheckpoint(
+        wandb_logger.run.dir, n_saved=2, filename_prefix='best',
+        require_empty=False, score_function=score_function,
+        score_name="validation_accuracy",
+        global_step_transform=global_step_from_engine(trainer)
+    )
+    early_stopping_handler = EarlyStopping(patience=3,
+                                           score_function=score_function,
+                                           trainer=trainer)
+    print(colored("[+] Engine and handlers are ready!", "green"))
 
     # define tqdm progress bar
     log_interval = 1
@@ -84,13 +100,14 @@ def run(args):
         pbar.desc = desc.format(iteration_metrics['loss'])
         pbar.update(log_interval)
 
-    wandb_logger = WandBLogger(
-        project="homework1-cc7221",
-        entity="p137",
-        name="sperm-segmentation",
-        config={"max_epochs": args.epochs, "batch_size": args.batch_size},
-        tags=["pytorch-ignite", "sperm-seg"]
-    )
+    print(colored("[*] Attaching event handlers", "white"))
+    for label, metric in metrics.items():
+        metric.attach(trainer, label, "batch_wise")
+
+    trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: train_evaluator.run(train_loader))
+    trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: val_evaluator.run(val_loader))
+    val_evaluator.add_event_handler(Events.EPOCH_COMPLETED, early_stopping_handler)
+    val_evaluator.add_event_handler(Events.COMPLETED, model_checkpoint, {'model': model})
 
     wandb_logger.attach_output_handler(
         trainer,
@@ -100,6 +117,15 @@ def run(args):
         output_transform=lambda loss_: {"loss": loss_[2]},
         global_step_transform=lambda *_: trainer.state.iteration,
     )
+
+    wandb_logger.attach_output_handler(
+        val_evaluator,
+        event_name=Events.EPOCH_COMPLETED,
+        tag="validation",
+        metric_names="all",
+        global_step_transform=lambda *_: trainer.state.iteration,
+    )
+    print(colored("[+] Event handlers are ready!", "green"))
 
     wandb_logger.watch(model)
     trainer.run(train_loader, max_epochs=args.epochs)
