@@ -38,7 +38,7 @@ def run(args):
 
     print(colored("[*] Initializing dataset and dataloader", "white"))
     dataset = SpermDataset(args.data)
-    n_val = int(len(dataset) * 0.05)
+    n_val = min(2, int(len(dataset) * 0.05))
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
     train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
