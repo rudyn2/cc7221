@@ -38,11 +38,11 @@ def run(args):
 
     print(colored("[*] Initializing dataset and dataloader", "white"))
     dataset = SpermDataset(args.data)
-    n_val = min(2, int(len(dataset) * 0.05))
-    n_train = len(dataset) - n_val
+    print(colored("Total examples: ", "white") + colored(len(dataset), "green"))
+    n_train, n_val = 14, 2
     train, val = random_split(dataset, [n_train, n_val])
     train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
-    val_loader = DataLoader(val, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
+    val_loader = DataLoader(val, batch_size=2, shuffle=True, num_workers=args.num_workers)
     print(colored("[+] Dataset & Dataloader Ready!", "green"))
 
     print(colored("[*] Initializing model, optimizer and loss", "white"))
