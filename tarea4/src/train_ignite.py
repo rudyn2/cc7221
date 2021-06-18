@@ -86,7 +86,7 @@ def run(args):
         score_name="validation_accuracy",
         global_step_transform=global_step_from_engine(trainer)
     )
-    early_stopping_handler = EarlyStopping(patience=3,
+    early_stopping_handler = EarlyStopping(patience=7,
                                            score_function=score_function,
                                            trainer=trainer)
     print(colored("[+] Engine and handlers are ready!", "green"))
