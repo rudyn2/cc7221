@@ -181,7 +181,7 @@ if __name__ == '__main__':
             1: 0.35,
             2: 0.3,
             3: 0.3
-        }, help='weights for classes')
+        }, type=float, help='weights for classes')
 
     torch.cuda.empty_cache()
     args_ = parser.parse_args()
