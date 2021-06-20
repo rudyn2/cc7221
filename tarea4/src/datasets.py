@@ -35,7 +35,7 @@ class CustomTransform:
 
     def __call__(self, image, mask):
         image = self.to_tensor(image, normalize=True, repeat_channels=3).float()
-        mask = self.to_tensor(mask, normalize=False)
+        mask = self.to_tensor(mask, normalize=False).int()
 
         if self.mode == "train":
             angle = random.choice(self.angles)
