@@ -234,6 +234,7 @@ class WeightedPixelWiseNLLoss(nn.Module):
         :param target: Bx1xHxW
         """
         logits = logits['out']
+        target = target.unsqueeze(1)
         batch_size = logits.shape[0]
         # Calculate log probabilities
         logp = F.log_softmax(logits, dim=1)
