@@ -8,7 +8,7 @@ from ignite.metrics import Loss, ConfusionMatrix, DiceCoefficient, IoU, MetricsL
 from ignite.utils import to_onehot
 from ignite.contrib.handlers import WandBLogger, global_step_from_engine
 from ignite.handlers import ModelCheckpoint, EarlyStopping
-from losses import FocalLoss, DiceLoss
+from losses import FocalLoss, DiceLoss, WeightedPixelWiseNLLoss
 from tqdm import tqdm
 import torchvision
 
@@ -56,6 +56,13 @@ def run(args):
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     if args.loss == 'focal':
         loss = FocalLoss(apply_nonlin=torch.sigmoid)
+    elif args.loss == 'wnll':
+        loss = WeightedPixelWiseNLLoss(weights={
+            0: 0.05,
+            1: 0.35,
+            2: 0.3,
+            3: 0.3
+        })
     else:
         loss = DiceLoss()
     print(colored("[+] Model, optimizer and loss are ready!", "green"))
