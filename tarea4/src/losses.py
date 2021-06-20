@@ -187,6 +187,7 @@ class DiceLoss(nn.Module):
             input: torch.Tensor,
             target: torch.Tensor) -> torch.Tensor:
         input = input['out']
+        target = target.squeeze(1)
         if not torch.is_tensor(input):
             raise TypeError("Input type is not a torch.Tensor. Got {}"
                             .format(type(input)))
