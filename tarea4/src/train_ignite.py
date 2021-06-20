@@ -63,7 +63,18 @@ def run(args):
     metrics = {'loss': Loss(loss_fn=loss, output_transform=lambda x: (x[0], x[1])),
                'loss_avg': RunningAverage(Loss(loss_fn=loss, output_transform=lambda x: (x[0], x[1]))),
                'dice': MetricsLambda(avg_fn, DiceCoefficient(cm_metric)),
-               'iou': MetricsLambda(avg_fn, IoU(cm_metric))}
+               'iou': MetricsLambda(avg_fn, IoU(cm_metric)),
+               'dice_sin_background': MetricsLambda(avg_fn, DiceCoefficient(cm_metric, ignore_index=0)),
+               'iou_sin_background': MetricsLambda(avg_fn, IoU(cm_metric, ignore_index=0)),
+               'dice_background': MetricsLambda(lambda x: x[0].item(), DiceCoefficient(cm_metric)),
+               'dice_head': MetricsLambda(lambda x: x[1].item(), DiceCoefficient(cm_metric)),
+               'dice_mid': MetricsLambda(lambda x: x[2].item(), DiceCoefficient(cm_metric)),
+               'dice_tail': MetricsLambda(lambda x: x[3].item(), DiceCoefficient(cm_metric)),
+               'iou_background': MetricsLambda(lambda x: x[0].item(), IoU(cm_metric)),
+               'iou_head': MetricsLambda(lambda x: x[1].item(), IoU(cm_metric)),
+               'iou_mid': MetricsLambda(lambda x: x[2].item(), IoU(cm_metric)),
+               'iou_tail': MetricsLambda(lambda x: x[3].item(), IoU(cm_metric))
+               }
     trainer = create_supervised_trainer(model,
                                         optimizer,
                                         loss,
