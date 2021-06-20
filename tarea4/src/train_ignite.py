@@ -57,13 +57,13 @@ def run(args):
     if args.loss == 'focal':
         loss = FocalLoss(apply_nonlin=torch.sigmoid)
     elif args.loss == 'wnll':
-        loss = WeightedPixelWiseNLLoss(weights=args.weights)
-        #loss = WeightedPixelWiseNLLoss(weights={
-        #    0: args.weights_c[0],
-        #    1: args.weights_c[1],
-        #    2: args.weights_c[2],
-        #    3: args.weights_c[3]
-        #})
+        #loss = WeightedPixelWiseNLLoss(weights=args.weights)
+        loss = WeightedPixelWiseNLLoss(weights={
+            0: args.weight0,
+            1: args.weight1,
+            2: args.weight2,
+            3: args.weight3
+        })
     else:
         loss = DiceLoss()
     print(colored("[+] Model, optimizer and loss are ready!", "green"))
@@ -176,12 +176,16 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', default=2, type=int, help="Batch size")
     parser.add_argument('--epochs', default=10, type=int, help="Number of epochs")
     parser.add_argument('--lr', default=0.001, type=float, help='Initial learning rate')
-    parser.add_argument('--weights', default={
-            0: 0.05,
-            1: 0.35,
-            2: 0.3,
-            3: 0.3
-        }, help='weights for classes')
+    parser.add_argument('--weight0', default=0.05, type=float, help='weight for class 0')
+    parser.add_argument('--weight1', default=0.35, type=float, help='weight for class 1')
+    parser.add_argument('--weight2', default=0.30, type=float, help='weight for class 2')
+    parser.add_argument('--weight3', default=0.30, type=float, help='weight for class 3')
+    #parser.add_argument('--weights', default={
+            #0: 0.05,
+            #1: 0.35,
+            #2: 0.3,
+            #3: 0.3
+        #}, help='weights for classes')
 
     torch.cuda.empty_cache()
     args_ = parser.parse_args()
