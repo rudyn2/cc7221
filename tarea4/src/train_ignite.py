@@ -8,12 +8,13 @@ from ignite.metrics import Loss, ConfusionMatrix, DiceCoefficient, IoU, MetricsL
 from ignite.utils import to_onehot
 from ignite.contrib.handlers import WandBLogger, global_step_from_engine
 from ignite.handlers import ModelCheckpoint, EarlyStopping
-from losses import FocalLoss
+from losses import FocalLoss, DiceLoss
 from tqdm import tqdm
 import torchvision
 
 
 NUM_CLASSES = 4
+
 
 def prepare_batch(batch, device, non_blocking):
     x = batch[0].to(device, non_blocking=non_blocking)
@@ -53,7 +54,10 @@ def run(args):
     model = torchvision.models.segmentation.deeplabv3_resnet50(num_classes=NUM_CLASSES, pretrained=False)
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    loss = FocalLoss(apply_nonlin=torch.sigmoid)
+    if args.loss == 'focal':
+        loss = FocalLoss(apply_nonlin=torch.sigmoid)
+    else:
+        loss = DiceLoss()
     print(colored("[+] Model, optimizer and loss are ready!", "green"))
 
     print(colored("[*] Creating engine and handlers", "white"))
@@ -159,6 +163,7 @@ if __name__ == '__main__':
     parser.add_argument('--val-size', default=0.05, type=float, help='Validation size')
 
     # training parameters
+    parser.add_argument('--loss', default='dice', type=str, help='Type of loss function')
     parser.add_argument('--num-workers', default=0, type=int, help='Number of data loader workers.')
     parser.add_argument('--batch-size', default=2, type=int, help="Batch size")
     parser.add_argument('--epochs', default=10, type=int, help="Number of epochs")
