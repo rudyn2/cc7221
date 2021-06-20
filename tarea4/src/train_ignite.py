@@ -58,10 +58,10 @@ def run(args):
         loss = FocalLoss(apply_nonlin=torch.sigmoid)
     elif args.loss == 'wnll':
         loss = WeightedPixelWiseNLLoss(weights={
-            0: args.weights_c[0],
-            1: args.weights_c[1],
-            2: args.weights_c[2],
-            3: args.weights_c[3]
+            0: torch.float32(args.weights_c[0]),
+            1: torch.float32(args.weights_c[1]),
+            2: torch.float32(args.weights_c[2]),
+            3: torch.float32(args.weights_c[3])
         })
     else:
         loss = DiceLoss()
