@@ -20,7 +20,6 @@ class CustomTransform:
 
     def __call__(self, image, mask):
         image = torch.tensor(image, device=self._device) / 255.0
-        image = image.repeat(3, 1, 1)
         mask = torch.tensor(mask, device=self._device)
         mask = (mask / 255.0) if len(mask.shape) > 2 else mask
         mask = mask.unsqueeze(0) if len(mask.shape) <= 2 else mask
@@ -94,18 +93,19 @@ class SpermDataset(Dataset):
             for mask_folder in ["Head-Masks", "Midpiece-Masks", "Tail-Masks"]:
                 file_path = Path(self.path).joinpath("mask").joinpath(mask_folder).joinpath(file_name)
                 mask_image = cv2.imread(str(file_path), 0)
-                _, mask_image = cv2.threshold(mask_image, 200, 255, cv2.THRESH_BINARY)
+                mask_image = (mask_image > 200).astype(np.uint8) * 255
                 mask.append(mask_image)
 
             # little dirty code to avoid missing masks
             if mask[0] is None:
                 continue
 
+            mask.insert(0, (~((mask[0] + mask[1] + mask[2]) > 0))*255)  # add background mask
             file_mask = np.stack(mask, axis=0)
 
             if not self.use_one_hot:
                 file_mask = np.argmax(file_mask, axis=0)
-                #file_mask = mask[0] + mask[1] + mask[2]
+
             seg[file_name] = file_mask
         return seg
 
