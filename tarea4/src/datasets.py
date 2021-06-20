@@ -18,11 +18,24 @@ class CustomTransform:
         self.mode = mode
         self._device = "cuda"
 
+    def to_tensor(self, arr: np.array,  normalize: bool = False, repeat_channels: int = None) -> torch.Tensor:
+        """
+        Transform an array to a torch Tensor of type Float64 and shape [C, W, H]
+        """
+        if normalize:
+            arr = arr / arr.max()
+        else:
+            arr = arr * 1.0
+        arr = torch.tensor(arr, device=self._device)
+        if len(arr.shape) <= 2:
+            arr = arr.unsqueeze(0)
+        if repeat_channels:
+            arr = arr.repeat(repeat_channels, 1, 1)
+        return arr
+
     def __call__(self, image, mask):
-        image = torch.tensor(image, device=self._device) / 255.0
-        mask = torch.tensor(mask, device=self._device)
-        mask = (mask / 255.0) if len(mask.shape) > 2 else mask
-        mask = mask.unsqueeze(0) if len(mask.shape) <= 2 else mask
+        image = self.to_tensor(image, normalize=True, repeat_channels=3)
+        mask = self.to_tensor(mask, normalize=False)
 
         if self.mode == "train":
             angle = random.choice(self.angles)
