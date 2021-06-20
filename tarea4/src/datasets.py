@@ -94,6 +94,7 @@ class SpermDataset(Dataset):
             for mask_folder in ["Head-Masks", "Midpiece-Masks", "Tail-Masks"]:
                 file_path = Path(self.path).joinpath("mask").joinpath(mask_folder).joinpath(file_name)
                 mask_image = cv2.imread(str(file_path), 0)
+                _, mask_image = cv2.threshold(mask_image, 200, 255, cv2.THRESH_BINARY)
                 mask.append(mask_image)
 
             # little dirty code to avoid missing masks
@@ -101,8 +102,10 @@ class SpermDataset(Dataset):
                 continue
 
             file_mask = np.stack(mask, axis=0)
+
             if not self.use_one_hot:
                 file_mask = np.argmax(file_mask, axis=0)
+                #file_mask = mask[0] + mask[1] + mask[2]
             seg[file_name] = file_mask
         return seg
 
