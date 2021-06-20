@@ -92,8 +92,8 @@ def run(args):
                                         prepare_batch=prepare_batch,
                                         output_transform=lambda x, y, y_, l: (y_, y, l),
                                         device=device)
-    train_evaluator = create_supervised_evaluator(model, metrics=metrics, device=device)
-    val_evaluator = create_supervised_evaluator(model, metrics=metrics, device=device)
+    train_evaluator = create_supervised_evaluator(model, metrics=metrics, device=device, prepare_batch=prepare_batch)
+    val_evaluator = create_supervised_evaluator(model, metrics=metrics, device=device, prepare_batch=prepare_batch)
     for label, metric in metrics.items():
         metric.attach(trainer, label, "batch_wise")
 
