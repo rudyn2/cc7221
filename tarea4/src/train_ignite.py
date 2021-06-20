@@ -13,6 +13,8 @@ from tqdm import tqdm
 import torchvision
 
 
+NUM_CLASSES = 4
+
 def prepare_batch(batch, device, non_blocking):
     x = batch[0].to(device, non_blocking=non_blocking)
     y = batch[1].to(device, non_blocking=non_blocking)
@@ -29,7 +31,7 @@ def output_transform_seg(process_output):
     y = process_output[1]  # (B, W, H)
     y_pred_ = y_pred.view(-1)  # B, (W*H)
     y_ = y.view(-1)
-    y_pred_one_hot = to_onehot(y_pred_, num_classes=3)
+    y_pred_one_hot = to_onehot(y_pred_, num_classes=NUM_CLASSES)
     return dict(y_pred=y_pred_one_hot, y=y_)  # output format is according to `DiceCoefficient` docs
 
 
@@ -48,7 +50,7 @@ def run(args):
 
     print(colored("[*] Initializing model, optimizer and loss", "white"))
     # model = DLv3Wrapper()
-    model = torchvision.models.segmentation.deeplabv3_resnet50(num_classes=3, pretrained=False)
+    model = torchvision.models.segmentation.deeplabv3_resnet50(num_classes=NUM_CLASSES, pretrained=False)
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     loss = FocalLoss(apply_nonlin=torch.sigmoid)
@@ -57,7 +59,7 @@ def run(args):
     print(colored("[*] Creating engine and handlers", "white"))
     score_function = lambda engine: -engine.state.metrics['loss_avg']
     avg_fn = lambda x: torch.mean(x).item()
-    cm_metric = ConfusionMatrix(num_classes=3, output_transform=output_transform_seg)
+    cm_metric = ConfusionMatrix(num_classes=NUM_CLASSES, output_transform=output_transform_seg)
     metrics = {'loss': Loss(loss_fn=loss, output_transform=lambda x: (x[0], x[1])),
                'loss_avg': RunningAverage(Loss(loss_fn=loss, output_transform=lambda x: (x[0], x[1]))),
                'dice': MetricsLambda(avg_fn, DiceCoefficient(cm_metric)),
