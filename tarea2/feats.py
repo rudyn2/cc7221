@@ -69,11 +69,11 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="Train model utility",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--siamese-weights', default='weights/best_SiameseNetwork_triplet.pth',
+    parser.add_argument('--siamese-weights', default=r'C:\Users\aleja\Desktop\Tareas\Reconocimiento Virtual con Deep Learning\T2\best_SiameseNetwork_contrastive.pth',#'weights/best_SiameseNetwork_triplet.pth',
                         type=str, help='Path to Siamese network weights')
-    parser.add_argument('--flickr-15k', default='data/Flickr15K', type=str,
+    parser.add_argument('--flickr-15k', default=r'B:/Flickr/Flickr15K', type=str,
                         help='Path to flickr dataset folder')
-    parser.add_argument('--output', default='features.db', type=str, help='Output path of feature db')
+    parser.add_argument('--output', default='features_contrastive.db', type=str, help='Output path of feature db')
 
     args = parser.parse_args()
 

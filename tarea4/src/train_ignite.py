@@ -132,7 +132,7 @@ def run(args):
 
     trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: train_evaluator.run(train_loader))
     trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: val_evaluator.run(val_loader))
-    val_evaluator.add_event_handler(Events.EPOCH_COMPLETED, early_stopping_handler)
+    val_evaluator.add_event_handler(Events.EPOCH_COMPLETED)#, early_stopping_handler)
     val_evaluator.add_event_handler(Events.COMPLETED, model_checkpoint, {'model': model})
 
     wandb_logger.attach_output_handler(
