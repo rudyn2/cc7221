@@ -111,9 +111,9 @@ class SpermDataset(Dataset):
                 file_path = Path(self.path).joinpath("mask").joinpath(mask_folder).joinpath(file_name)
                 mask_image = cv2.imread(str(file_path), 0)
                 if mask_image is not None:
-                    _, mask_image = cv2.threshold(mask_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU,)
+                    #_, mask_image = cv2.threshold(mask_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU,)
 
-                    #mask_image = (mask_image > 200).astype(np.uint8) * 255
+                    mask_image = (mask_image > 200).astype(np.uint8) * 255
                 mask.append(mask_image)
 
             # little dirty code to avoid missing masks
