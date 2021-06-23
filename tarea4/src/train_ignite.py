@@ -51,13 +51,12 @@ def run(args):
 
     print(colored("[*] Initializing model, optimizer and loss", "white"))
     # model = DLv3Wrapper()
-    model = torchvision.models.segmentation.deeplabv3_resnet50(num_classes=NUM_CLASSES, pretrained=False)
+    model = torchvision.models.segmentation.deeplabv3_resnet50(num_classes=NUM_CLASSES, pretrained=True)
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     if args.loss == 'focal':
         loss = FocalLoss(apply_nonlin=torch.sigmoid)
     elif args.loss == 'wnll':
-        #loss = WeightedPixelWiseNLLoss(weights=args.weights)
         loss = WeightedPixelWiseNLLoss(weights={
             0: args.weight0,
             1: args.weight1,
@@ -180,12 +179,6 @@ if __name__ == '__main__':
     parser.add_argument('--weight1', default=0.35, type=float, help='weight for class 1')
     parser.add_argument('--weight2', default=0.30, type=float, help='weight for class 2')
     parser.add_argument('--weight3', default=0.30, type=float, help='weight for class 3')
-    #parser.add_argument('--weights', default={
-            #0: 0.05,
-            #1: 0.35,
-            #2: 0.3,
-            #3: 0.3
-        #}, help='weights for classes')
 
     torch.cuda.empty_cache()
     args_ = parser.parse_args()
