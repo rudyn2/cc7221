@@ -5,7 +5,7 @@ from models import SiameseNetwork
 import re
 from PIL import Image
 from torchvision.transforms import transforms
-from utils import RotationTransform
+from tarea2.utils import RotationTransform
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from feats import ImageFlickrFeatures
@@ -95,13 +95,12 @@ if __name__ == '__main__':
     sketches_net = ResNet34()
 
     siamese_net = SiameseNetwork(sketches_net, imagenet_net)
-    siamese_net.load_state_dict(torch.load(r'C:\Users\aleja\Desktop\Tareas\Reconocimiento Virtual con Deep Learning\T2\best_SiameseNetwork_contrastive.pth'))
+    siamese_net.load_state_dict(torch.load("weights/best_SiameseNetwork_contrastive.pth"))
 
     s = torch.nn.CosineSimilarity()
     flickr_dataset = ImageFlickrFeatures("dbs/features.db")
-    r = Ranker('B:\Flickr\Flickr15K',
+    r = Ranker('/home/rudy/Documents/cc7221/tarea2/data/Flickr15K',
                image_dataset_features=flickr_dataset,
                feature_extractor=siamese_net,
                similarity_fn=s)
-    rank = r.get_rank(r'B:\Flickr\Flickr15K\queries\1001.png')
-
+    rank = r.get_rank('data/Flickr15K/queries/1001.png')

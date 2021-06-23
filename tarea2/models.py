@@ -7,7 +7,7 @@ class ResNet34(nn.Module):
 
     def __init__(self, num_classes: int = 250):
         super(ResNet34, self).__init__()
-        self.backbone = resnet34(pretrained=False)
+        self.backbone = resnet34(pretrained=True)
         self.backbone.fc = nn.Linear(self.backbone.fc.in_features, num_classes)
         self._fc2 = None
         self._fc3 = None
