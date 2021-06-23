@@ -51,7 +51,7 @@ def run(args):
 
     print(colored("[*] Initializing model, optimizer and loss", "white"))
     # model = DLv3Wrapper()
-    model = torchvision.models.segmentation.deeplabv3_resnet50(num_classes=NUM_CLASSES, pretrained=True)
+    model = torchvision.models.segmentation.deeplabv3_resnet101(num_classes=NUM_CLASSES, pretrained=False)
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     if args.loss == 'focal':
