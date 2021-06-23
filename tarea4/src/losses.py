@@ -253,3 +253,4 @@ class WeightedPixelWiseNLLoss(nn.Module):
         # Average over mini-batch
         weighted_loss = -1 * weighted_loss.mean()
         return weighted_loss
+

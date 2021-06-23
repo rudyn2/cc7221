@@ -7,6 +7,18 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as TF
 import random
+from typing import Tuple
+
+
+def mixup(image_i: np.ndarray,
+          image_j: np.ndarray,
+          mask_i: np.ndarray,
+          mask_j: np.ndarray,
+          alpha: float = 0.2) -> Tuple[np.ndarray, np.ndarray]:
+    lam = np.random.beta(alpha, alpha)
+    mixup_image = image_i * lam + image_j * (1 - lam)
+    mixup_mask = mask_i * lam + mask_j * alpha
+    return mixup_image, mixup_mask
 
 
 class CustomTransform:
@@ -38,8 +50,8 @@ class CustomTransform:
         mask = self.to_tensor(mask, normalize=False).type(torch.LongTensor).to(self._device)
 
         if self.mode == "train":
-            #image = TF.equalize(image.to(torch.uint8)).float()
-            #image = TF.adjust_contrast(image, 2)
+            # image = TF.equalize(image.to(torch.uint8)).float()
+            # image = TF.adjust_contrast(image, 2)
             angle = random.choice(self.angles)
             image = TF.rotate(image, angle)
             mask = TF.rotate(mask, angle)
@@ -55,8 +67,6 @@ class CustomTransform:
                 mask = TF.hflip(mask)
 
             # Contrast
-
-
         return image, mask
 
 
@@ -112,7 +122,7 @@ class SpermDataset(Dataset):
                 file_path = Path(self.path).joinpath("mask").joinpath(mask_folder).joinpath(file_name)
                 mask_image = cv2.imread(str(file_path), 0)
                 if mask_image is not None:
-                    #_, mask_image = cv2.threshold(mask_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU,)
+                    #_mask_image = cv2.threshold(mask_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU,)
                     mask_image = (mask_image > 200).astype(np.uint8) * 255
                 mask.append(mask_image)
 
@@ -135,6 +145,14 @@ class SpermDataset(Dataset):
 
         image = self.data[self.mode][file_name]
         mask = self.segmentation_masks[file_name]
+
+        if random.random() < 0.5:
+            # apply mixup
+            new_image_idx = random.choice([*list(range(item)), *list(range(item+1, len(self.data[self.mode])))])
+            new_image_name = self.idx_to_key[self.mode][new_image_idx]
+            second_image = self.data[self.mode][new_image_name]
+            second_image_mask = self.segmentation_masks[new_image_name]
+            image, mask = mixup(image, second_image, mask, second_image_mask)
 
         image_transformed, mask_transformed = self.transform[self.mode](image, mask)
         return image_transformed, mask_transformed
