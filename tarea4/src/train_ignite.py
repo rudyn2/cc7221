@@ -110,7 +110,7 @@ def run(args):
         score_name="validation_accuracy",
         global_step_transform=global_step_from_engine(trainer)
     )
-    early_stopping_handler = EarlyStopping(patience=7,
+    early_stopping_handler = EarlyStopping(patience=args.patience,
                                            score_function=score_function,
                                            trainer=trainer)
     print(colored("[+] Engine and handlers are ready!", "green"))
@@ -171,6 +171,8 @@ if __name__ == '__main__':
 
     # training parameters
     parser.add_argument('--loss', default='dice', type=str, help='Type of loss function')
+    parser.add_argument('--patience', default=7, type=int, help='Number of epochs without reduction in validation loss'
+                                                                'until early stopping.')
     parser.add_argument('--num-workers', default=0, type=int, help='Number of data loader workers.')
     parser.add_argument('--batch-size', default=2, type=int, help="Batch size")
     parser.add_argument('--epochs', default=10, type=int, help="Number of epochs")
