@@ -34,11 +34,11 @@ class CustomTransform:
         return arr
 
     def __call__(self, image, mask):
-        image = self.to_tensor(image, normalize=True, repeat_channels=3).float()
+        image = self.to_tensor(image, normalize=True, repeat_channels=3)#.float()
         mask = self.to_tensor(mask, normalize=False).type(torch.LongTensor).to(self._device)
 
         if self.mode == "train":
-            image = TF.equalize(torch.uint8(image))
+            image = TF.equalize(image)
             angle = random.choice(self.angles)
             image = TF.rotate(image, angle)
             mask = TF.rotate(mask, angle)
