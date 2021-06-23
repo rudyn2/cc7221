@@ -38,8 +38,7 @@ class CustomTransform:
         mask = self.to_tensor(mask, normalize=False).type(torch.LongTensor).to(self._device)
 
         if self.mode == "train":
-            image = TF.equalize(image.to(torch.uint8))
-            image = image.to(torch.float64)
+            image = TF.equalize(image.to(torch.uint8)).float()
             angle = random.choice(self.angles)
             image = TF.rotate(image, angle)
             mask = TF.rotate(mask, angle)
