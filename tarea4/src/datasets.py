@@ -39,6 +39,7 @@ class CustomTransform:
 
         if self.mode == "train":
             #image = TF.equalize(image.to(torch.uint8)).float()
+            image = TF.adjust_contrast(image, 2)
             angle = random.choice(self.angles)
             image = TF.rotate(image, angle)
             mask = TF.rotate(mask, angle)
