@@ -196,6 +196,7 @@ class SpermDataset(Dataset):
             second_image = self.data[second_file_name]
             second_mask = self.segmentation_masks[second_file_name]
             random_mask = random_crop_mask(image)
+            random_mask = np.logical_and(random_mask, second_mask != 0)     # we just select the sperms
             image[random_mask] = second_image[random_mask]
             mask[random_mask] = second_mask[random_mask]
 
