@@ -1,5 +1,5 @@
 import torch
-from datasets import SpermDataset
+from datasets import get_datasets
 from termcolor import colored
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
@@ -41,10 +41,9 @@ def run(args):
     print(colored("Using device: ", "white") + colored(device, "green"))
 
     print(colored("[*] Initializing dataset and dataloader", "white"))
-    dataset = SpermDataset(args.data)
-    print(colored("Total examples: ", "white") + colored(len(dataset), "green"))
-    n_train, n_val = 12, 3
-    train, val = random_split(dataset, [n_train, n_val])
+    train, val, _ = get_datasets(args.data, val_k=3)
+    print(colored("Total train examples: ", "white") + colored(len(train), "green"))
+    print(colored("Total val examples: ", "white") + colored(len(val), "green"))
     train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
     val_loader = DataLoader(val, batch_size=2, shuffle=True, num_workers=args.num_workers)
     print(colored("[+] Dataset & Dataloader Ready!", "green"))
