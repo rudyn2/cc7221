@@ -37,7 +37,7 @@ def run(args):
 
     print(colored("Initializing test dataset...", color="white"))
     _, _, test_dataset = get_datasets(args.data)
-    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=True)
     model_factory = {
         'fcn-resnet50': lambda: torchvision.models.segmentation.fcn_resnet50(num_classes=NUM_CLASSES,
                                                                              pretrained=False),
