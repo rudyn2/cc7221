@@ -133,7 +133,7 @@ def run(args):
     # define tqdm progress bar
     log_interval = 1
     desc = 'ITERATION [EPOCH={}]- loss: {:.2f}'
-    pbar = tqdm(initial=0, leave=False, total=len(train_loader), desc=desc.format(0))
+    pbar = tqdm(initial=0, leave=False, total=len(train_loader), desc=desc.format(0, 0))
 
     # define callbacks
     @trainer.on(Events.ITERATION_COMPLETED)
