@@ -41,7 +41,7 @@ def run(args):
     print(colored("Using device: ", "white") + colored(device, "green"))
 
     print(colored("[*] Initializing dataset and dataloader", "white"))
-    train, val, _ = get_datasets(args.data, val_k=3)
+    train, val, _ = get_datasets(args.data, val_k=args.val_k)
     print(colored("Total train examples: ", "white") + colored(len(train), "green"))
     print(colored("Total val examples: ", "white") + colored(len(val), "green"))
     train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
@@ -165,8 +165,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="Train model utility",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--data', default='../data/SpermSegGS', type=str, help='Path to dataset folder')
-    parser.add_argument('--val-size', default=0.05, type=float, help='Validation size')
+    parser.add_argument('--data', default='../data/SpermSegGS', type=str, help='Path to dataset folder.')
+    parser.add_argument('--val-k', default=3, type=float, help='Number of examples to be used for validation.')
 
     # training parameters
     parser.add_argument('--loss', default='dice', type=str, help='Type of loss function')
@@ -176,8 +176,9 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', default=2, type=int, help="Batch size")
     parser.add_argument('--epochs', default=10, type=int, help="Number of epochs")
     parser.add_argument('--lr', default=0.001, type=float, help='Initial learning rate')
-    parser.add_argument('--weight0', default=0.05, type=float, help='weight for class 0')
-    parser.add_argument('--weight1', default=0.35, type=float, help='weight for class 1')
+    parser.add_argument('--mosaic-prob', default=0.5, type=float, help='Probability of applying mosaic augmentation')
+    parser.add_argument('--weight0', default=0.1, type=float, help='weight for class 0')
+    parser.add_argument('--weight1', default=0.30, type=float, help='weight for class 1')
     parser.add_argument('--weight2', default=0.30, type=float, help='weight for class 2')
     parser.add_argument('--weight3', default=0.30, type=float, help='weight for class 3')
 

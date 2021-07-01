@@ -191,7 +191,7 @@ class SpermDataset(Dataset):
         mask = self.segmentation_masks[file_name]
 
         # apply mosaic transform
-        if self.transform_mode == 'train' and random.random() < 0.5:
+        if self.transform_mode == 'train' and random.random() < self._mosaic_prob:
             second_file_name = random.choice(list(set(self.idx_to_key) - set(file_name)))
             second_image = self.data[second_file_name]
             second_mask = self.segmentation_masks[second_file_name]
