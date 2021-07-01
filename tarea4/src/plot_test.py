@@ -43,14 +43,18 @@ def run(args):
         images.append(image.detach().cpu())
         gt_seg.append(seg.detach().cpu())
         pd_seg.append(predicted_seg['out'].detach().cpu())
+    images = torch.cat(images, dim=0)
+    gt_seg = torch.cat(gt_seg, dim=0)
+    pd_seg = torch.cat(pd_seg, dim=0)
 
+    print(colored("Plotting", "white"))
     fig, axs = plt.subplots(ncols=3, nrows=4, figsize=(14, 14))
     axs[0][0].set_title("Image")
     axs[0][1].set_title("Expected segmentation")
     axs[0][2].set_title("Predicted segmentation")
     for i in range(images.shape[0]):
         # plot image
-        axs[i][0].imshow(image[i].permute(1, 2, 0).cpu())
+        axs[i][0].imshow(images[i].permute(1, 2, 0).cpu())
         axs[i][0].axis('off')
 
         # plot gt seg
