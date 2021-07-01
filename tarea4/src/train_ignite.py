@@ -41,7 +41,7 @@ def run(args):
     print(colored("Using device: ", "white") + colored(device, "green"))
 
     print(colored("[*] Initializing dataset and dataloader", "white"))
-    train, val, _ = get_datasets(args.data, val_k=args.val_k)
+    train, val, _ = get_datasets(args.data, val_k=args.val_k, mosaic_prob=args.mosaic_prob)
     print(colored("Total train examples: ", "white") + colored(len(train), "green"))
     print(colored("Total val examples: ", "white") + colored(len(val), "green"))
     train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
@@ -100,7 +100,14 @@ def run(args):
         project="homework1-cc7221",
         entity="p137",
         name="sperm-segmentation",
-        config={"max_epochs": args.epochs, "batch_size": args.batch_size},
+        config={"max_epochs": args.epochs,
+                "patience": args.patience,
+                "model": model.__class__.__name__,
+                "val-k": args.val_k,
+                "lr": args.lr,
+                "loss": args.loss,
+                "mosaic_prob": args.mosaic_prob,
+                "batch_size": args.batch_size},
         tags=["pytorch-ignite", "sperm-seg"]
     )
     model_checkpoint = ModelCheckpoint(

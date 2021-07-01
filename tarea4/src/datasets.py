@@ -100,7 +100,7 @@ class CustomTransform:
         return image, mask
 
 
-def get_datasets(path: str, val_k: int):
+def get_datasets(path: str, val_k: int, **kwargs):
 
     # load images
     data = {"train": {}, "test": {}}
@@ -114,15 +114,11 @@ def get_datasets(path: str, val_k: int):
     train_val_keys = list(data["train"].keys())
     val_keys = random.sample(train_val_keys, k=val_k)
     train_keys = [k for k in train_val_keys if k not in val_keys]
-    idx_to_key = {
-        "train": train_keys,
-        "val": val_keys,
-        "test": list(data["test"].keys())
-    }
+
     # create datasets and return them
-    train_dataset = SpermDataset(path, data["train"], idx_to_key["train"], transform_mode="train")
-    val_dataset = SpermDataset(path, data["train"], idx_to_key["val"], transform_mode="val")
-    test_dataset = SpermDataset(path, data["test"], idx_to_key["test"], transform_mode="val")
+    train_dataset = SpermDataset(path, data["train"], train_keys, transform_mode="train", **kwargs)
+    val_dataset = SpermDataset(path, data["train"], val_keys, transform_mode="val", **kwargs)
+    test_dataset = SpermDataset(path, data["test"], list(data["test"].keys()), transform_mode="val", **kwargs)
     return train_dataset, val_dataset, test_dataset
 
 
