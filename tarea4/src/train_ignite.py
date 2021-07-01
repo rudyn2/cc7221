@@ -132,14 +132,14 @@ def run(args):
 
     # define tqdm progress bar
     log_interval = 1
-    desc = 'ITERATION - loss: {:.2f}'
+    desc = 'ITERATION [EPOCH={}]- loss: {:.2f}'
     pbar = tqdm(initial=0, leave=False, total=len(train_loader), desc=desc.format(0))
 
     # define callbacks
     @trainer.on(Events.ITERATION_COMPLETED)
     def log_training_loss(engine):
         iteration_metrics = engine.state.metrics
-        pbar.desc = desc.format(iteration_metrics['loss'])
+        pbar.desc = desc.format(engine.state.epoch, iteration_metrics['loss'])
         pbar.update(log_interval)
 
     print(colored("[*] Attaching event handlers", "white"))
