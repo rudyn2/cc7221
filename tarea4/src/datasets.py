@@ -100,7 +100,7 @@ class CustomTransform:
         return image, mask
 
 
-def get_datasets(path: str, val_k: int, **kwargs):
+def get_datasets(path: str, val_k: int = 3, **kwargs):
 
     # load images
     data = {"train": {}, "test": {}}
