@@ -12,7 +12,6 @@ from losses import FocalLoss, DiceLoss, WeightedPixelWiseNLLoss
 from tqdm import tqdm
 import torchvision
 
-
 NUM_CLASSES = 4
 
 
@@ -50,7 +49,17 @@ def run(args):
 
     print(colored("[*] Initializing model, optimizer and loss", "white"))
     # model = DLv3Wrapper()
-    model = torchvision.models.segmentation.deeplabv3_resnet50(num_classes=NUM_CLASSES, pretrained=False)
+    model_factory = {
+        'fcn-resnet50': lambda: torchvision.models.segmentation.fcn_resnet50(num_classes=NUM_CLASSES,
+                                                                             pretrained=False),
+        'fcn-resnet101': lambda: torchvision.models.segmentation.fcn_resnet101(num_classes=NUM_CLASSES,
+                                                                               pretrained=False),
+        'deeplab-resnet50': lambda: torchvision.models.segmentation.deeplabv3_resnet50(num_classes=NUM_CLASSES,
+                                                                                       pretrained=False),
+        'deeplab-resnet101': lambda: torchvision.models.segmentation.deeplabv3_resnet101(num_classes=NUM_CLASSES,
+                                                                                         pretrained=False)
+    }
+    model = model_factory[args.model]()
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     if args.loss == 'focal':
@@ -102,7 +111,7 @@ def run(args):
         name="sperm-segmentation",
         config={"max_epochs": args.epochs,
                 "patience": args.patience,
-                "model": model.__class__.__name__,
+                "model": args.model,
                 "val-k": args.val_k,
                 "lr": args.lr,
                 "loss": args.loss,
@@ -176,6 +185,7 @@ if __name__ == '__main__':
     parser.add_argument('--val-k', default=3, type=float, help='Number of examples to be used for validation.')
 
     # training parameters
+    parser.add_argument('--model', default='deeplab-resnet50', help='Model architecture.')
     parser.add_argument('--loss', default='dice', type=str, help='Type of loss function')
     parser.add_argument('--patience', default=7, type=int, help='Number of epochs without reduction in validation loss'
                                                                 'until early stopping.')
@@ -192,5 +202,3 @@ if __name__ == '__main__':
     torch.cuda.empty_cache()
     args_ = parser.parse_args()
     run(args_)
-
-
