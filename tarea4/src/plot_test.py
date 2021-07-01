@@ -65,6 +65,8 @@ def run(args):
         axs[i][2].imshow(pd_seg[i].permute(1, 2, 0).cpu(), cmap='gray')
         axs[i][2].axis('off')
 
+    plt.tight_layout()
+    plt.savefig("output.svg")
     plt.show()
 
 
