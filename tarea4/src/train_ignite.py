@@ -3,6 +3,7 @@ from datasets import get_datasets
 from termcolor import colored
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer
 from ignite.metrics import Loss, ConfusionMatrix, DiceCoefficient, IoU, MetricsLambda, RunningAverage
 from ignite.utils import to_onehot
@@ -12,11 +13,8 @@ from losses import FocalLoss, DiceLoss, WeightedPixelWiseNLLoss
 from tqdm import tqdm
 import torchvision
 
+
 NUM_CLASSES = 4
-
-
-
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 class ReduceLROnPlateauScheduler:
@@ -90,7 +88,8 @@ def run(args):
     model = model_factory[args.model]()
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    scheduler = ReduceLROnPlateauScheduler(optimizer, metric_name="dice", mode="max", patience=5, verbose=True)
+    scheduler = ReduceLROnPlateauScheduler(optimizer, metric_name="dice", mode="max", factor=0.5,
+                                           patience=7, verbose=True)
     if args.loss == 'focal':
         loss = FocalLoss(apply_nonlin=torch.sigmoid)
     elif args.loss == 'wnll':
