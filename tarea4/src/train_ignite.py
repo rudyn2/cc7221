@@ -68,7 +68,7 @@ def run(args):
     print(colored("Using device: ", "white") + colored(device, "green"))
 
     print(colored("[*] Initializing dataset and dataloader", "white"))
-    train, val, _ = get_datasets(args.data, val_k=args.val_k, mosaic_prob=args.mosaic_prob)
+    train, val, _ = get_datasets(args.data, mosaic_prob=args.mosaic_prob)
     print(colored("Total train examples: ", "white") + colored(len(train), "green"))
     print(colored("Total val examples: ", "white") + colored(len(val), "green"))
     train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
@@ -141,7 +141,6 @@ def run(args):
         config={"max_epochs": args.epochs,
                 "patience": args.patience,
                 "model": args.model,
-                "val-k": args.val_k,
                 "lr": args.lr,
                 "loss": args.loss,
                 "mosaic_prob": args.mosaic_prob,
@@ -213,7 +212,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train model utility",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--data', default='../data/SpermSegGS', type=str, help='Path to dataset folder.')
-    parser.add_argument('--val-k', default=3, type=float, help='Number of examples to be used for validation.')
 
     # training parameters
     parser.add_argument('--model', default='deeplab-resnet50', help='Model architecture.')
