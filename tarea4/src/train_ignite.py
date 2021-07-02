@@ -69,7 +69,8 @@ def run(args):
     train, val, _ = get_datasets(args.data, use_validation=not args.all_train, mosaic_prob=args.mosaic_prob)
     print(colored("Total train examples: ", "white") + colored(len(train), "green"))
     print(colored("Total val examples: ", "white") + colored(len(val), "green"))
-    train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
+    train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers,
+                              drop_last=True)
     if not args.all_train:
         val_loader = DataLoader(val, batch_size=2, shuffle=True, num_workers=args.num_workers)
     print(colored("[+] Dataset & Dataloader Ready!", "green"))
