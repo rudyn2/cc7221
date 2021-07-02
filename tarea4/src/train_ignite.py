@@ -105,7 +105,7 @@ def run(args):
     print(colored("[+] Model, optimizer and loss are ready!", "green"))
 
     print(colored("[*] Creating engine and handlers", "white"))
-    score_function = lambda engine: -engine.state.metrics['loss_avg']
+    score_function = lambda engine: engine.state.metrics['dice']
     avg_fn = lambda x: torch.mean(x).item()
     cm_metric = ConfusionMatrix(num_classes=NUM_CLASSES, output_transform=output_transform_seg)
     metrics = {'loss': Loss(loss_fn=loss, output_transform=lambda x: (x[0], x[1])),
