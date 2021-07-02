@@ -151,7 +151,7 @@ def run(args):
     model_checkpoint = ModelCheckpoint(
         wandb_logger.run.dir, n_saved=2, filename_prefix='best',
         require_empty=False, score_function=score_function,
-        score_name="validation_accuracy",
+        score_name="dice",
         global_step_transform=global_step_from_engine(trainer)
     )
     early_stopping_handler = EarlyStopping(patience=args.patience,
@@ -190,6 +190,10 @@ def run(args):
             metric_names="all",
             global_step_transform=lambda *_: trainer.state.iteration,
         )
+    else:
+        train_evaluator.add_event_handler(Events.EPOCH_COMPLETED, scheduler)
+        train_evaluator.add_event_handler(Events.EPOCH_COMPLETED, early_stopping_handler)
+        train_evaluator.add_event_handler(Events.EPOCH_COMPLETED, model_checkpoint, {'model': model})
 
     wandb_logger.attach_output_handler(
         trainer,
