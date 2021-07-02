@@ -100,7 +100,7 @@ class CustomTransform:
         return image, mask
 
 
-def get_datasets(path: str, **kwargs):
+def get_datasets(path: str, use_validation: bool = False, **kwargs):
 
     # load images
     data = {"train": {}, "test": {}}
@@ -112,8 +112,10 @@ def get_datasets(path: str, **kwargs):
 
     # random split train and validation sets
     train_val_keys = list(data["train"].keys())
-    # val_keys = random.sample(train_val_keys, k=val_k)
-    val_keys = ['Placa1-imagen13.jpg', 'Placa1-imagen18.jpg', 'Placa1-imagen1.jpg']
+    if use_validation:
+        val_keys = ['Placa1-imagen13.jpg', 'Placa1-imagen18.jpg', 'Placa1-imagen1.jpg']
+    else:
+        val_keys = []
     train_keys = [k for k in train_val_keys if k not in val_keys]
 
     # create datasets and return them
