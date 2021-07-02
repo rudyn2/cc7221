@@ -15,6 +15,34 @@ import torchvision
 NUM_CLASSES = 4
 
 
+
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+
+
+class ReduceLROnPlateauScheduler:
+    """Wrapper of torch.optim.lr_scheduler.ReduceLROnPlateau with __call__ method like other schedulers in
+        contrib\handlers\param_scheduler.py"""
+
+    def __init__(
+            self,
+            optimizer,
+            metric_name,
+            mode='min', factor=0.1, patience=10,
+            threshold=1e-4, threshold_mode='rel', cooldown=0,
+            min_lr=0, eps=1e-8, verbose=False,
+    ):
+        self.metric_name = metric_name
+        self.scheduler = ReduceLROnPlateau(optimizer, mode=mode, factor=factor, patience=patience,
+                                           threshold=threshold, threshold_mode=threshold_mode, cooldown=cooldown,
+                                           min_lr=min_lr, eps=eps, verbose=verbose)
+
+    def __call__(self, engine, name=None):
+        self.scheduler.step(engine.state.metrics[self.metric_name])
+
+    def state_dict(self):
+        return self.scheduler.state_dict()
+
+
 def prepare_batch(batch, device, non_blocking):
     x = batch[0].to(device, non_blocking=non_blocking)
     y = batch[1].to(device, non_blocking=non_blocking)
@@ -62,6 +90,7 @@ def run(args):
     model = model_factory[args.model]()
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    scheduler = ReduceLROnPlateauScheduler(optimizer, metric_name="dice", mode="max", patience=5, verbose=True)
     if args.loss == 'focal':
         loss = FocalLoss(apply_nonlin=torch.sigmoid)
     elif args.loss == 'wnll':
@@ -148,7 +177,8 @@ def run(args):
     trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: train_evaluator.run(train_loader))
     trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: val_evaluator.run(val_loader))
     val_evaluator.add_event_handler(Events.EPOCH_COMPLETED, early_stopping_handler)
-    val_evaluator.add_event_handler(Events.COMPLETED, model_checkpoint, {'model': model})
+    val_evaluator.add_event_handler(Events.EPOCH_COMPLETED, model_checkpoint, {'model': model})
+    val_evaluator.add_event_handler(Events.EPOCH_COMPLETED, scheduler)
 
     wandb_logger.attach_output_handler(
         trainer,
