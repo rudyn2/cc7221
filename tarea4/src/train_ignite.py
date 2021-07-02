@@ -70,7 +70,8 @@ def run(args):
     print(colored("Total train examples: ", "white") + colored(len(train), "green"))
     print(colored("Total val examples: ", "white") + colored(len(val), "green"))
     train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
-    val_loader = DataLoader(val, batch_size=2, shuffle=True, num_workers=args.num_workers)
+    if not args.all_train:
+        val_loader = DataLoader(val, batch_size=2, shuffle=True, num_workers=args.num_workers)
     print(colored("[+] Dataset & Dataloader Ready!", "green"))
 
     print(colored("[*] Initializing model, optimizer and loss", "white"))
@@ -129,7 +130,7 @@ def run(args):
                                         output_transform=lambda x, y, y_, l: (y_, y, l),
                                         device=device)
     train_evaluator = create_supervised_evaluator(model, metrics=metrics, device=device, prepare_batch=prepare_batch)
-    val_evaluator = create_supervised_evaluator(model, metrics=metrics, device=device, prepare_batch=prepare_batch)
+
     for label, metric in metrics.items():
         metric.attach(trainer, label, "batch_wise")
 
@@ -173,10 +174,21 @@ def run(args):
     print(colored("[*] Attaching event handlers", "white"))
 
     trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: train_evaluator.run(train_loader))
-    trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: val_evaluator.run(val_loader))
-    val_evaluator.add_event_handler(Events.EPOCH_COMPLETED, early_stopping_handler)
-    val_evaluator.add_event_handler(Events.EPOCH_COMPLETED, model_checkpoint, {'model': model})
-    val_evaluator.add_event_handler(Events.EPOCH_COMPLETED, scheduler)
+
+    # create evaluation engine and attach its handlers
+    if not args.all_train:
+        val_evaluator = create_supervised_evaluator(model, metrics=metrics, device=device, prepare_batch=prepare_batch)
+        trainer.add_event_handler(Events.EPOCH_COMPLETED, handler=lambda _: val_evaluator.run(val_loader))
+        val_evaluator.add_event_handler(Events.EPOCH_COMPLETED, early_stopping_handler)
+        val_evaluator.add_event_handler(Events.EPOCH_COMPLETED, model_checkpoint, {'model': model})
+        val_evaluator.add_event_handler(Events.EPOCH_COMPLETED, scheduler)
+        wandb_logger.attach_output_handler(
+            val_evaluator,
+            event_name=Events.EPOCH_COMPLETED,
+            tag="validation",
+            metric_names="all",
+            global_step_transform=lambda *_: trainer.state.iteration,
+        )
 
     wandb_logger.attach_output_handler(
         trainer,
@@ -184,14 +196,6 @@ def run(args):
         tag="training",
         metric_names="all",
         output_transform=lambda loss_: {"loss": loss_[2]},
-        global_step_transform=lambda *_: trainer.state.iteration,
-    )
-
-    wandb_logger.attach_output_handler(
-        val_evaluator,
-        event_name=Events.EPOCH_COMPLETED,
-        tag="validation",
-        metric_names="all",
         global_step_transform=lambda *_: trainer.state.iteration,
     )
     print(colored("[+] Event handlers are ready!", "green"))
