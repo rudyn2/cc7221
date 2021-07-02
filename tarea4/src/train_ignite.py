@@ -128,7 +128,7 @@ def run(args):
     early_stopping_handler = EarlyStopping(patience=args.patience,
                                            score_function=score_function,
                                            min_delta=0.01,
-                                           trainer=val_evaluator)
+                                           trainer=trainer)
     print(colored("[+] Engine and handlers are ready!", "green"))
 
     # define tqdm progress bar

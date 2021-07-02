@@ -19,7 +19,7 @@ def prepare_batch(batch, device, non_blocking):
 def run(args):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     _, _, test = get_datasets(args.data)
-    test_loader = DataLoader(test, batch_size=2)
+    test_loader = DataLoader(test, batch_size=2, num_workers=0)
     model_factory = {
         'fcn-resnet50': lambda: torchvision.models.segmentation.fcn_resnet50(num_classes=NUM_CLASSES,
                                                                              pretrained=False),
