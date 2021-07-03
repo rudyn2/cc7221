@@ -96,7 +96,7 @@ def run(args):
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     scheduler = ReduceLROnPlateauScheduler(optimizer, metric_name="dice", mode="max", factor=0.5,
-                                           patience=7, verbose=True)
+                                           patience=args.lr_decay_epochs, verbose=True)
     if args.loss == 'focal':
         loss = FocalLoss(apply_nonlin=torch.sigmoid)
     elif args.loss == 'wnll':
@@ -227,7 +227,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train model utility",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--data', default='../data/SpermSegGS', type=str, help='Path to dataset folder.')
-    parser.add_argument('--new-size', default='480, 672', type=str, help='Resize images before processing')#default=None
+    parser.add_argument('--new-size', default='480, 672', type=str, help='Resize images before processing')
     parser.add_argument('--all-train', action='store_true', help='Whether to use all the data for training or not.')
 
     # training parameters
@@ -235,6 +235,8 @@ if __name__ == '__main__':
     parser.add_argument('--loss', default='dice', type=str, help='Type of loss function')
     parser.add_argument('--patience', default=7, type=int, help='Number of epochs without reduction in validation loss'
                                                                 'until early stopping.')
+    parser.add_argument('--lr-decay-epochs', default=15, type=int, help='Number of epochs without dice improvement to'
+                                                                        'decrease the learning rate.')
     parser.add_argument('--num-workers', default=0, type=int, help='Number of data loader workers.')
     parser.add_argument('--batch-size', default=2, type=int, help="Batch size")
     parser.add_argument('--epochs', default=10, type=int, help="Number of epochs")
