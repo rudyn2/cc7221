@@ -9,7 +9,7 @@ from ignite.metrics import Loss, ConfusionMatrix, DiceCoefficient, IoU, MetricsL
 from ignite.utils import to_onehot
 from ignite.contrib.handlers import WandBLogger, global_step_from_engine
 from ignite.handlers import ModelCheckpoint, EarlyStopping
-from losses import FocalLoss, DiceLoss, WeightedPixelWiseNLLoss
+from losses import FocalLoss, DiceLoss, WeightedPixelWiseNLLoss, cross_entropy_loss
 from tqdm import tqdm
 from unet_model import UNet
 import torchvision
@@ -106,6 +106,8 @@ def run(args):
             2: args.weight2,
             3: args.weight3
         })
+    elif args.loss == 'cross':
+        loss = cross_entropy_loss()
     else:
         loss = DiceLoss()
     print(colored("[+] Model, optimizer and loss are ready!", "green"))
