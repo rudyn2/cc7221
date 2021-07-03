@@ -105,7 +105,7 @@ class CustomTransform:
 
             if random.random() < self.p_crop:
                 # Resize
-                resize = T.Resize(size=(480, 672))
+                resize = T.Resize(size=(480, 672), interpolation=TF.InterpolationMode.NEAREST)
                 # Random crop
                 i, j, h, w = T.RandomCrop.get_params(
                     image, output_size=(320, 448))
@@ -230,7 +230,7 @@ if __name__ == '__main__':
     from torch.utils.data import DataLoader
 
     folder_path = r"C:\Users\C0101\PycharmProjects\cc7221\tarea4\data\SpermSegGS"
-    train, val, test = get_datasets(folder_path, use_validation=True, new_size=(290, 390))
-    dataloader = DataLoader(val, batch_size=2)
+    train, val, test = get_datasets(folder_path, use_validation=True, new_size=(480, 672))
+    dataloader = DataLoader(train, batch_size=2)
     for batch in dataloader:
         break

@@ -254,6 +254,8 @@ class WeightedPixelWiseNLLoss(nn.Module):
         weighted_loss = -1 * weighted_loss.mean()
         return weighted_loss
 
+
+
 class cross_entropy_loss(nn.Module):
     def __init__(self):
         super(cross_entropy_loss, self).__init__()
