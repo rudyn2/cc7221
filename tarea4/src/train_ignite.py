@@ -245,5 +245,6 @@ if __name__ == '__main__':
 
     torch.cuda.empty_cache()
     args_ = parser.parse_args()
-    args_.new_size = tuple([int(s) for s in str(args_.new_size).split(",")])
+    if args_.new_size:
+        args_.new_size = tuple([int(s) for s in str(args_.new_size).split(",")])
     run(args_)
