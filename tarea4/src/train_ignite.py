@@ -11,6 +11,7 @@ from ignite.contrib.handlers import WandBLogger, global_step_from_engine
 from ignite.handlers import ModelCheckpoint, EarlyStopping
 from losses import FocalLoss, DiceLoss, WeightedPixelWiseNLLoss
 from tqdm import tqdm
+from unet_model import UNet
 import torchvision
 
 
@@ -88,7 +89,8 @@ def run(args):
         'deeplab-resnet50': lambda: torchvision.models.segmentation.deeplabv3_resnet50(num_classes=NUM_CLASSES,
                                                                                        pretrained=False),
         'deeplab-resnet101': lambda: torchvision.models.segmentation.deeplabv3_resnet101(num_classes=NUM_CLASSES,
-                                                                                         pretrained=False)
+                                                                                         pretrained=False),
+        'unet': lambda: UNet(n_channels=3, n_classes=4)
     }
     model = model_factory[args.model]()
     model.to(device)
