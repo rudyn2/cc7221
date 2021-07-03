@@ -255,10 +255,10 @@ class WeightedPixelWiseNLLoss(nn.Module):
         return weighted_loss
 
 
-
-class cross_entropy_loss(nn.Module):
+class CrossEntropy(nn.Module):
     def __init__(self):
-        super(cross_entropy_loss, self).__init__()
+        super(CrossEntropy, self).__init__()
+        self.ce = torch.nn.CrossEntropyLoss()
 
     def forward(self, logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
@@ -266,13 +266,6 @@ class cross_entropy_loss(nn.Module):
         :param target: CxHxW or BxHxW
         """
         logits = logits['out']
-        target = target.unsqueeze(1)
-
-        #batch_size = logits.shape[0]
-
-        loss = nn.CrossEntropyLoss()
-
-        output = loss(logits, target)
-
+        output = self.ce(logits, target)
         return output
 
