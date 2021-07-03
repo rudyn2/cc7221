@@ -55,10 +55,11 @@ def random_crop_mask(arr: np.ndarray, min_area: int = 9000, max_area: int = 5000
 class CustomTransform:
     """Rotate, horizontal flip and vertical flip."""
 
-    def __init__(self, p_flip: float = 0.5, mode: str = "train"):
+    def __init__(self, p_flip: float = 0.5, mode: str = "train", new_size: tuple = None):
         self.angles = list(np.linspace(-90, 90, num=37))
         self.p_flip = p_flip
         self.mode = mode
+        self.new_size = new_size
         self._device = "cuda"
 
     def to_tensor(self, arr: np.array, normalize: bool = False, repeat_channels: int = None) -> torch.Tensor:
@@ -79,6 +80,10 @@ class CustomTransform:
     def __call__(self, image, mask):
         image = self.to_tensor(image, normalize=True, repeat_channels=3).float()
         mask = self.to_tensor(mask, normalize=False).type(torch.LongTensor).to(self._device)
+
+        if self.new_size:
+            image = TF.resize(image, size=list(self.new_size))
+            mask = TF.resize(mask, size=list(self.new_size), interpolation=TF.InterpolationMode.NEAREST)
 
         if self.mode == "train":
 
@@ -131,7 +136,8 @@ class SpermDataset(Dataset):
                  data: dict, keys: list,
                  target_one_hot: bool = False,
                  transform_mode: str = "train",
-                 mosaic_prob: float = 0.5):
+                 mosaic_prob: float = 0.5,
+                 new_size: tuple = None):
         """
         SpermDataset Constructor.
         :param path: Path to dataset folder.
@@ -150,9 +156,9 @@ class SpermDataset(Dataset):
         self.segmentation_masks = self._build_segmentation()
         self.transform_mode = transform_mode
         self.transform = {
-            "train": CustomTransform(mode="train"),
-            "val": CustomTransform(mode="test"),
-            "test": CustomTransform(mode="test")
+            "train": CustomTransform(mode="train", new_size=new_size),
+            "val": CustomTransform(mode="test", new_size=new_size),
+            "test": CustomTransform(mode="test", new_size=new_size)
         }
 
     def _build_segmentation(self):
@@ -210,7 +216,7 @@ if __name__ == '__main__':
     from torch.utils.data import DataLoader
 
     folder_path = r"C:\Users\C0101\PycharmProjects\cc7221\tarea4\data\SpermSegGS"
-    train, val, test = get_datasets(folder_path, val_k=3)
+    train, val, test = get_datasets(folder_path, use_validation=True, new_size=(290, 390))
     dataloader = DataLoader(val, batch_size=2)
     for batch in dataloader:
         break
