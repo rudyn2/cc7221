@@ -261,31 +261,16 @@ class cross_entropy_loss(nn.Module):
     def forward(self, logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
         :param logits: BxCxHxW
-        :param target: Bx1xHxW
+        :param target: CxHxW or BxHxW
         """
         logits = logits['out']
         target = target.unsqueeze(1)
 
-        batch_size = logits.shape[0]
-        # Calculate log probabilities
-        #logp = F.log_softmax(logits, dim=1)
+        #batch_size = logits.shape[0]
 
         loss = nn.CrossEntropyLoss()
 
         output = loss(logits, target)
-        #output.backward()
 
-        # Gather log probabilities with respect to target
-        #logp = logp.gather(1, target.type(torch.cuda.LongTensor))
-
-        # Multiply with weights
-        #weights = self._create_weight_map(target)
-        #weighted_logp = (logp * weights).view(batch_size, -1)
-
-        # Rescale so that loss is in approx. same interval
-        #weighted_loss = weighted_logp.sum(1) / weights.view(batch_size, -1).sum(1)
-
-        # Average over mini-batch
-        #weighted_loss = -1 * weighted_loss.mean()
         return output
 

@@ -107,6 +107,7 @@ def run(args):
             3: args.weight3
         })
     elif args.loss == 'cross':
+
         loss = cross_entropy_loss()
     else:
         loss = DiceLoss()
@@ -227,7 +228,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train model utility",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--data', default='../data/SpermSegGS', type=str, help='Path to dataset folder.')
-    parser.add_argument('--new-size', default=None, type=str, help='Resize images before processing')
+    parser.add_argument('--new-size', default='(480, 672)', type=str, help='Resize images before processing')
     parser.add_argument('--all-train', action='store_true', help='Whether to use all the data for training or not.')
 
     # training parameters

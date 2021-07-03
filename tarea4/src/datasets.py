@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import torch
 import torchvision.transforms.functional as TF
+import torchvision.transforms as T
 import random
 from typing import Tuple
 
@@ -55,12 +56,13 @@ def random_crop_mask(arr: np.ndarray, min_area: int = 9000, max_area: int = 5000
 class CustomTransform:
     """Rotate, horizontal flip and vertical flip."""
 
-    def __init__(self, p_flip: float = 0.5, mode: str = "train", new_size: tuple = None):
+    def __init__(self, p_flip: float = 0.5, p_crop: float = 0.5, mode: str = "train", new_size: tuple = None):
         self.angles = list(np.linspace(-90, 90, num=37))
         self.p_flip = p_flip
         self.mode = mode
         self.new_size = new_size
         self._device = "cuda"
+        self.p_crop = p_crop
 
     def to_tensor(self, arr: np.array, normalize: bool = False, repeat_channels: int = None) -> torch.Tensor:
         """
@@ -100,6 +102,18 @@ class CustomTransform:
             if random.random() < self.p_flip:
                 image = TF.hflip(image)
                 mask = TF.hflip(mask)
+
+            if random.random() < self.p_crop:
+                # Resize
+                resize = T.Resize(size=(480, 672))
+                # Random crop
+                i, j, h, w = T.RandomCrop.get_params(
+                    image, output_size=(320, 448))
+                image = TF.crop(image, i, j, h, w)
+                mask = TF.crop(mask, i, j, h, w)
+
+                image = resize(image)
+                mask = resize(mask)
 
             # Contrast
         return image, mask
